@@ -43,7 +43,8 @@ maybe_write("Aligning...\n",0)
 maybe_write("NOTE: TM logprobs may be positive since they do not include segmentation\n",0)
 total_logprob = 0.0
 unaligned_sentences = 0
-for sent_num, (f, e) in enumerate(zip(french, english)):
+
+for sent_num, (f, e) in enumerate(zip(french, english)):                
   maybe_write("===========================================================\n",1)
   maybe_write("SENTENCE PAIR:\n%s\n%s\n" % (" ".join(f), " ".join(e)),0)
 

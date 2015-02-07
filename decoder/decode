@@ -3,6 +3,7 @@ import optparse
 import sys
 import models
 from collections import namedtuple
+import pdb
 
 optparser = optparse.OptionParser()
 optparser.add_option("-i", "--input", dest="input", default="data/input", help="File containing sentences to translate (default=data/input)")
@@ -10,9 +11,47 @@ optparser.add_option("-t", "--translation-model", dest="tm", default="data/tm", 
 optparser.add_option("-l", "--language-model", dest="lm", default="data/lm", help="File containing ARPA-format language model (default=data/lm)")
 optparser.add_option("-n", "--num_sentences", dest="num_sents", default=sys.maxint, type="int", help="Number of sentences to decode (default=no limit)")
 optparser.add_option("-k", "--translations-per-phrase", dest="k", default=1, type="int", help="Limit on number of translations to consider per phrase (default=1)")
-optparser.add_option("-s", "--stack-size", dest="s", default=1, type="int", help="Maximum stack size (default=1)")
+optparser.add_option("-s", "--stack-size", dest="s", default=10, type="int", help="Maximum stack size (default=1)")
 optparser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False,  help="Verbose mode (default=off)")
 opts = optparser.parse_args()[0]
+
+def updateBitmap(bitmap, startA, startB):
+  bits = bitmap
+  for i in range(startA, startB):
+    bits[i] = 1
+  return bits
+
+def getMissingRange(bitmap):
+  start = -1
+  end = -1
+  for i, s in enumerate(bitmap):
+    if s == 0:
+      start = i
+      break
+  for j, e in enumerate(bitmap[start:], start):
+    if e == 1:
+      end = j
+      return (start, end)
+  return -1
+
+def extract_english(h): 
+    return "" if h.predecessor is None else "%s%s " % (extract_english(h.predecessor), h.phrase.english)
+
+def createHypothesis(stacks, stack_index, sentence, tm, lm, bitmap, logprob, lm_state):
+  print h
+  if sentence in tm:				                   
+    for phrase in tm[sentence]:		                
+      logprob = logprob + phrase.logprob	        
+      lm_state = lm_state			                
+      for word in phrase.english.split():		            
+        (lm_state, word_logprob) = lm.score(lm_state, word)	
+        logprob += word_logprob					
+      logprob += lm.end(lm_state) if stack_index == len(f) else 0.0		
+      new_hypothesis = hypothesis(logprob, lm_state, h, phrase, bitmap)
+
+      if lm_state not in stacks[stack_index] or stacks[stack_index][lm_state].logprob < logprob:
+        stacks[stack_index][lm_state] = new_hypothesis
+
 
 tm = models.TM(opts.tm, opts.k)
 lm = models.LM(opts.lm)
@@ -24,33 +63,62 @@ for word in set(sum(french,())):
     tm[(word,)] = [models.phrase(word, 0.0)]
 
 sys.stderr.write("Decoding %s...\n" % (opts.input,))
+
 for f in french:
-  # The following code implements a monotone decoding
-  # algorithm (one that doesn't permute the target phrases).
-  # Hence all hypotheses in stacks[i] represent translations of 
-  # the first i words of the input sentence. You should generalize
-  # this so that the decoder can consider swapping adjacent phrases.
-  hypothesis = namedtuple("hypothesis", "logprob, lm_state, predecessor, phrase")
-  initial_hypothesis = hypothesis(0.0, lm.begin(), None, None)
-  stacks = [{} for _ in f] + [{}]
+  hypothesis = namedtuple("hypothesis", "logprob, lm_state, predecessor, phrase, bitmap")
+  initial_bitmap = [0] * len(f)
+  initial_hypothesis = hypothesis(0.0, lm.begin(), None, None, initial_bitmap)
+  stacks = [{} for _ in f] + [{}]		
   stacks[0][lm.begin()] = initial_hypothesis
-  for i, stack in enumerate(stacks[:-1]):
-    for h in sorted(stack.itervalues(),key=lambda h: -h.logprob)[:opts.s]: # prune
-      for j in xrange(i+1,len(f)+1):
-        if f[i:j] in tm:
-          for phrase in tm[f[i:j]]:
-            logprob = h.logprob + phrase.logprob
-            lm_state = h.lm_state
-            for word in phrase.english.split():
-              (lm_state, word_logprob) = lm.score(lm_state, word)
-              logprob += word_logprob
-            logprob += lm.end(lm_state) if j == len(f) else 0.0
-            new_hypothesis = hypothesis(logprob, lm_state, h, phrase)
-            if lm_state not in stacks[j] or stacks[j][lm_state].logprob < logprob: # second case is recombination
-              stacks[j][lm_state] = new_hypothesis 
+
+  for startA, stack in enumerate(stacks[:-1]):
+    print 'STACK #'+str(startA)+' = '+str(len(stack))
+    for h in sorted(stack.itervalues(),key=lambda h: -h.logprob)[:opts.s]:
+        pdb.set_trace()
+        if (getMissingRange(h.bitmap) < 0):
+          print '--------------GOOD --------------------'   
+          print 'start A:'+str(startA)      
+          for end in range(startA+2, len(f)+1): 
+            for startB in range(startA+1, end+1):
+              pdb.set_trace()
+              print 'start B:'+str(startB)
+              print 'end:'+str(end)+'\n'
+              partA = f[startA:startB]
+              bitmap_a = updateBitmap(h.bitmap, startA, startB)
+              print 'A = '+ str(bitmap_a).strip('[]')
+              createHypothesis(stacks, sum(bitmap_a), partA, tm, lm, bitmap_a, h.logprob, h.lm_state)
+
+              if startB < end:  #we're not at the last loop
+                partB = f[startB:end] 
+                pdb.set_trace()
+                bitmap_b = updateBitmap(h.bitmap, startB, end)
+                print 'B = '+ str(bitmap_b).strip('[]')
+                createHypothesis(stacks, sum(bitmap_b), partB, tm, lm, bitmap_b, h.logprob, h.lm_state)
+
+        else:               #there's a gap
+          print '----------------MISSING --------------------'
+          missed_range = getMissingRange(h.bitmap)
+          missed_phrase = f[missed_range[0]:missed_range[1]]
+          bitmap_updated = updateBitmap(h.bitmap, missed_range[0],missed_range[1])
+
+          if missed_phrase in tm:				                   
+            for phrase in tm[missed_phrase]:			               
+              logprob = h.logprob + phrase.logprob	       
+              lm_state = h.lm_state			                
+              for word in phrase.english.split():		            
+                (lm_state, word_logprob) = lm.score(lm_state, word)	
+                logprob += word_logprob					# add it to the log_prob
+              logprob += lm.end(lm_state) if sum(bitmap_updated) == len(f) else 0.0		
+              new_hypothesis = hypothesis(logprob, lm_state, h, phrase, bitmap)
+              if lm_state not in stacks[sum(bitmap_updated)] or stacks[sum(bitmap_updated)][lm_state].logprob < logprob:
+                 stacks[sum(bitmap_updated)][lm_state] = new_hypothesis
+
+  print len(stacks[-1])
+
+  for h in stacks[-1].itervalues():
+    print extract_english(h)
   winner = max(stacks[-1].itervalues(), key=lambda h: h.logprob)
-  def extract_english(h): 
-    return "" if h.predecessor is None else "%s%s " % (extract_english(h.predecessor), h.phrase.english)
+
   print extract_english(winner)
 
   if opts.verbose:
@@ -59,3 +127,18 @@ for f in french:
     tm_logprob = extract_tm_logprob(winner)
     sys.stderr.write("LM = %f, TM = %f, Total = %f\n" % 
       (winner.logprob - tm_logprob, tm_logprob, winner.logprob))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

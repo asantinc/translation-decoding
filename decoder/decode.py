@@ -74,7 +74,7 @@ for f in french:
   for startA, stack in enumerate(stacks[:-1]):
     print 'STACK #'+str(startA)+' = '+str(len(stack))
     for h in sorted(stack.itervalues(),key=lambda h: -h.logprob)[:opts.s]:
-        pdb.set_trace()
+        #pdb.set_trace()
         if (getMissingRange(h.bitmap) < 0):
           print '--------------GOOD --------------------'   
           print 'start A:'+str(startA)      

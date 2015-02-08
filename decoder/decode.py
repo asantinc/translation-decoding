@@ -97,12 +97,13 @@ for i,f in enumerate(french):
               if middle < end:  #take the second part, if we're not at the last loop
                 bitmap = updateBitmap(h.bitmap, middle, end)
                 hypothesize(stacks, f[middle:end], tm, lm, h, bitmap)
-                
+                '''
                 for mid_2 in range(middle+1,len(f)+1):
                   if  f[mid_2:end] in tm:
                     for phrase in tm[f[mid_2:end]]:
                       bitmap = updateBitmap(h.bitmap, mid_2, end)
                       hypothesize(stacks, f[mid_2:end], tm, lm, h, bitmap)
+                '''
 
   winner = max(stacks[-1].itervalues(), key=lambda h: h.logprob)
   print extract_english(winner)

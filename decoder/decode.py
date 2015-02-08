@@ -49,7 +49,6 @@ def getMissingRange(bitmap):
 
 
 def createHypothesis(stacks, stack_index, sentence, tm, lm, bitmap, h):
-  #pdb.set_trace()
   if sentence in tm:				                   
     for phrase in tm[sentence]:		                
       logprob = h.logprob + phrase.logprob	        

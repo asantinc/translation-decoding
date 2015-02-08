@@ -23,10 +23,10 @@ def printStacks(stacks):
   for i,stack in enumerate(stacks):
     if len(stack)>0:  
       print '--------------- Stack: '+ str(i)+'--------------- '  
-      for s in stack.keys():     
-        sentence = extract_english(stack[s])
-        bits = stack[s].bitmap
-        print ', '.join(str(x) for x in bits) +' == '+ sentence
+      for h in sorted(stack.itervalues(),key=lambda h: -h.logprob):
+        sentence = extract_english(h)
+        bits = h.bitmap
+        print ', '.join(str(x) for x in bits) +' \n '+ sentence +' == '+str(h.logprob)
       
 def updateBitmap(bitmap, startA, startB):
   bits = list(bitmap)
@@ -35,8 +35,6 @@ def updateBitmap(bitmap, startA, startB):
   return bits
 
 def getMissingRange(bitmap):
-  start = -1
-  end = -1
   for i, s in enumerate(bitmap):
     if s == 0:
       start = i
@@ -44,11 +42,12 @@ def getMissingRange(bitmap):
   for j, e in enumerate(bitmap[start:], start):
     if e == 1:
       end = j
-      return (start, end)
-  return -1
+      return (1, start, end)
+  return (0, ,)
 
 
-def createHypothesis(stacks, stack_index, sentence, tm, lm, bitmap, h):
+def hypothesize(stacks, sentence, tm, lm, h, bitmap):
+  stack_index = sum(bitmap)
   if sentence in tm:				                   
     for phrase in tm[sentence]:		                
       logprob = h.logprob + phrase.logprob	        
@@ -61,8 +60,6 @@ def createHypothesis(stacks, stack_index, sentence, tm, lm, bitmap, h):
 
       if lm_state not in stacks[stack_index] or stacks[stack_index][lm_state].logprob < logprob:
         stacks[stack_index][lm_state] = new_hypothesis
-        #print 'Add to stack'+str(stack_index)+':'+str(bitmap_a).strip('[]')
-
 
 tm = models.TM(opts.tm, opts.k)
 lm = models.LM(opts.lm)
@@ -83,35 +80,22 @@ for i,f in enumerate(french):
   stacks[0][lm.begin()] = initial_hypothesis
 
   for startA, stack in enumerate(stacks[:-1]):
+    printStacks(stacks)
     for h in sorted(stack.itervalues(),key=lambda h: -h.logprob)[:opts.s]:
-        if (getMissingRange(h.bitmap) < 0):
+      gap = getMissingRange(h.bitmap)
+      if (gap[0]):              #there's a gap that, fill it and create new hypotheses
+        bitmap = updateBitmap(h.bitmap, full[0], full[1])
+        hypothesize(stacks, f[full[0]:full[1]], tm, lm, h, bitmap)
+      
+      else:                     # no gap, split sentence in two
           for end in range(startA+2, len(f)+1):
             for startB in range(startA+1, end+1):
-              partA = f[startA:startB]
-              bitmap_a = updateBitmap(h.bitmap, startA, startB)
-              createHypothesis(stacks, sum(bitmap_a), partA, tm, lm, bitmap_a, h)
+              bitmap = updateBitmap(h.bitmap, startA, startB)
+              hypothesize(stacks, f[startA:startB], tm, lm, h, bitmap)
 
-              if startB < end:  #we're not at the last loop
-                partB = f[startB:end] 
-                bitmap_b = updateBitmap(h.bitmap, startB, end)
-                createHypothesis(stacks, sum(bitmap_b), partB, tm, lm, bitmap_b, h)
-
-        else:               #there's a gap
-          missed_range = getMissingRange(h.bitmap)
-          missed_phrase = f[missed_range[0]:missed_range[1]]
-          bitmap_updated = updateBitmap(h.bitmap, missed_range[0],missed_range[1])
-
-          if missed_phrase in tm:				                   
-            for phrase in tm[missed_phrase]:			               
-              logprob = h.logprob + phrase.logprob	       
-              lm_state = h.lm_state			                
-              for word in phrase.english.split():		            
-                (lm_state, word_logprob) = lm.score(lm_state, word)	
-                logprob += word_logprob					# add it to the log_prob
-              logprob += lm.end(lm_state) if sum(bitmap_updated) == len(f) else 0.0		
-              new_hypothesis = hypothesis(logprob, lm_state, h, phrase, bitmap_updated)
-              if lm_state not in stacks[sum(bitmap_updated)] or stacks[sum(bitmap_updated)][lm_state].logprob < logprob:
-                 stacks[sum(bitmap_updated)][lm_state] = new_hypothesis
+              if startB < end:  #take the second part, if we're not at the last loop
+                bitmap = updateBitmap(h.bitmap, startB, end)
+                hypothesize(stacks, f[startB:end], tm, lm, h, bitmap)
 
   winner = max(stacks[-1].itervalues(), key=lambda h: h.logprob)
   print extract_english(winner)

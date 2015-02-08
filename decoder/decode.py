@@ -11,7 +11,7 @@ optparser.add_option("-t", "--translation-model", dest="tm", default="data/tm", 
 optparser.add_option("-l", "--language-model", dest="lm", default="data/lm", help="File containing ARPA-format language model (default=data/lm)")
 optparser.add_option("-n", "--num_sentences", dest="num_sents", default=sys.maxint, type="int", help="Number of sentences to decode (default=no limit)")
 optparser.add_option("-k", "--translations-per-phrase", dest="k", default=1, type="int", help="Limit on number of translations to consider per phrase (default=1)")
-optparser.add_option("-s", "--stack-size", dest="s", default=1000, type="int", help="Maximum stack size (default=1)")
+optparser.add_option("-s", "--stack-size", dest="s", default=100, type="int", help="Maximum stack size (default=1)")
 optparser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False,  help="Verbose mode (default=off)")
 opts = optparser.parse_args()[0]
 
@@ -81,7 +81,6 @@ for i,f in enumerate(french):
   stacks[0][lm.begin()] = initial_hypothesis
 
   for startA, stack in enumerate(stacks[:-1]):
-    printStacks(stacks, f)
     for h in sorted(stack.itervalues(),key=lambda h: -h.logprob)[:opts.s]:
       gap = getMissingRange(h.bitmap)
       if (gap[0]):              #there's a gap that, fill it and create new hypotheses
@@ -89,22 +88,14 @@ for i,f in enumerate(french):
         hypothesize(stacks, f[gap[1]:gap[2]], tm, lm, h, bitmap)
       
       else:                     # no gap, split sentence in two
-          for end in range(startA+2, len(f)+1):
-            for middle in range(startA+1, end+1):
-              bitmap = updateBitmap(h.bitmap, startA, middle)
-              hypothesize(stacks, f[startA:middle], tm, lm, h, bitmap)
-
-              if middle < end:  #take the second part, if we're not at the last loop
-                bitmap = updateBitmap(h.bitmap, middle, end)
-                hypothesize(stacks, f[middle:end], tm, lm, h, bitmap)
-                '''
-                for mid_2 in range(middle+1,len(f)+1):
-                  if  f[mid_2:end] in tm:
-                    for phrase in tm[f[mid_2:end]]:
-                      bitmap = updateBitmap(h.bitmap, mid_2, end)
-                      hypothesize(stacks, f[mid_2:end], tm, lm, h, bitmap)
-                '''
-
+          for middle in range(startA+1, len(f)+1):
+            bitmap = updateBitmap(h.bitmap, startA, middle)
+            hypothesize(stacks, f[startA:middle], tm, lm, h, bitmap)
+              
+            for end in range(middle+1, len(f)+1):
+              bitmap = updateBitmap(h.bitmap, middle, end)
+              hypothesize(stacks, f[middle:end], tm, lm, h, bitmap)
+              
   winner = max(stacks[-1].itervalues(), key=lambda h: h.logprob)
   print extract_english(winner)
 

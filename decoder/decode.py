@@ -3,6 +3,7 @@ import optparse
 import sys
 import models
 from collections import namedtuple
+from collections import defaultdict
 import pdb
 
 optparser = optparse.OptionParser()
@@ -45,8 +46,88 @@ def getMissingRange(bitmap):
       end = j
       return (1, start, end)
   return (0, 0,0)
-
-
+'''
+def tmCost(bitmap, tm, cost):
+  if size(phrase == 1):
+      return cost    
+      
+def futureCost(bitmap, tm, lm):
+  #get the cost of translating the 
+  lm_cost = sum([if (b == 1) lm[b] for b in bitmap])
+  tm_cost = 0
+  tm_cost += tmCost(bitmap, tm, tm_cost)
+  return lm_cost+tm_cost
+''' 
+  
+def printCost(cost_table, f):
+  table = '||'.join(f)+'\n'
+  pdb.set_trace()
+  for length in range(1, len(f)+1):
+    table += 'L='+str(length)
+    row = ''
+    for start in range(0, len(f)-length+1):
+      key = (start, start+length)
+      row = cost_table[key]
+      table += '||' + str(row)+'||'
+    table += '\n'
+  print table
+    
+def futureCostTable(f, tm, lm):
+  cost_table = defaultdict()
+  lm_state = ()
+  for length in range(1, len(f)+1):
+    #pdb.set_trace()
+    #is the +1 needed?
+    #print range(1, len(f)+1)
+    for start in range(0, len(f)-length+1):
+      print range(0, len(f)-length+1)
+      print start
+      end = start+length
+      print end
+      cost_table[(start, end)] = float('-inf')
+      for i in range(start+1, end+1):
+          #pdb.set_trace()
+          if start-end > 1:
+            #if they're both in the TM
+            if (f[start:i] in tm) and (f[i:end] in tm):
+            #find the min cost translation
+              sentenceA_cost = float('-inf')
+              sentenceB_cost = float('-inf')
+              
+              for phrase in tm[f[start:i]]:
+                A_temp_cost = 0
+                for word in phrase.english.split():		            
+                  (lm_state, word_logprob) = lm.score(lm_state, word)	
+                  A_temp_cost += word_logprob
+                if (phrase.logprob+A_temp_cost) > sentenceA_cost:
+                  sentenceA_cost = phrase.logprob+A_temp_cost
+                
+              for phrase in tm[f[i:end]]:
+                B_temp_cost = 0  	  
+                for word in phrase.english.split():
+                  (lm_state, word_logprob) = lm.score(lm_state, word)	
+                  B_temp_cost += word_logprob
+                if phrase.logprob+B_temp_cost > sentenceB_cost:
+                  sentenceB_cost = phrase.logprob+B_temp_cost
+                        
+              sentence_cost = sentenceA_cost + sentenceB_cost
+              if sentence_cost > cost_table[(start, end)]:
+                 cost_table[(start, end)] = sentence_cost
+                 
+          elif f[start:end] in tm:   
+            for phrase in tm[f[start:end]]:
+              temp_cost = 0  	  
+              for word in phrase.english.split():		            
+                (lm_state, word_logprob) = lm.score(lm_state, word)	
+                temp_cost += word_logprob               
+              if phrase.logprob > cost_table[(start, end)]:
+                cost_table[(start, end)] = phrase.logprob+temp_cost
+          else:
+              print f[start:end]
+              print 'was not found'
+  printCost(cost_table, f)
+  
+  
 def hypothesize(stacks, sentence, tm, lm, h, bitmap):
   stack_index = sum(bitmap)
   if sentence in tm:				                   
@@ -58,13 +139,14 @@ def hypothesize(stacks, sentence, tm, lm, h, bitmap):
         logprob += word_logprob			
       logprob += lm.end(lm_state) if stack_index == len(f) else 0.0
       new_hypothesis = h._replace(logprob=logprob, lm_state=lm_state, predecessor=h, phrase=phrase, bitmap=bitmap)
-
       if lm_state not in stacks[stack_index] or stacks[stack_index][lm_state].logprob < logprob:
         stacks[stack_index][lm_state] = new_hypothesis
+
 
 tm = models.TM(opts.tm, opts.k)
 lm = models.LM(opts.lm)
 french = [tuple(line.strip().split()) for line in open(opts.input).readlines()[:opts.num_sents]]
+
 
 # tm should translate unknown words as-is with probability 1
 for word in set(sum(french,())):
@@ -74,6 +156,8 @@ for word in set(sum(french,())):
 sys.stderr.write("Decoding %s...\n" % (opts.input,))
 
 for i,f in enumerate(french):
+  futureCostTable(f[:3], tm, lm)
+  break
   hypothesis = namedtuple("hypothesis", "logprob, lm_state, predecessor, phrase, bitmap")
   initial_bitmap = [0] * len(f)
   initial_hypothesis = hypothesis(0.0, lm.begin(), None, None, initial_bitmap)
@@ -86,16 +170,16 @@ for i,f in enumerate(french):
       if (gap[0]):              #there's a gap that, fill it and create new hypotheses
         bitmap = updateBitmap(h.bitmap, gap[1], gap[2])
         hypothesize(stacks, f[gap[1]:gap[2]], tm, lm, h, bitmap)
-      
+  
       else:                     # no gap, split sentence in two
           for middle in range(startA+1, len(f)+1):
             bitmap = updateBitmap(h.bitmap, startA, middle)
             hypothesize(stacks, f[startA:middle], tm, lm, h, bitmap)
-              
+          
             for end in range(middle+1, len(f)+1):
               bitmap = updateBitmap(h.bitmap, middle, end)
               hypothesize(stacks, f[middle:end], tm, lm, h, bitmap)
-              
+          
   winner = max(stacks[-1].itervalues(), key=lambda h: h.logprob)
   print extract_english(winner)
 
@@ -105,18 +189,6 @@ for i,f in enumerate(french):
     tm_logprob = extract_tm_logprob(winner)
     sys.stderr.write("LM = %f, TM = %f, Total = %f\n" % 
       (winner.logprob - tm_logprob, tm_logprob, winner.logprob))
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

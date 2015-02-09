@@ -1,0 +1,9 @@
+
+python generalbeam.py -s 100 -v 2| python compute-model-score
+Total corpus log probability (LM+TM): -1314.295650
+
+
+Base decoder:
+
+
+

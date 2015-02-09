@@ -60,72 +60,50 @@ def futureCost(bitmap, tm, lm):
 ''' 
   
 def printCost(cost_table, f):
+  cost = cost_table[f]
   table = '||'.join(f)+'\n'
-  pdb.set_trace()
   for length in range(1, len(f)+1):
     table += 'L='+str(length)
     row = ''
     for start in range(0, len(f)-length+1):
       key = (start, start+length)
-      row = cost_table[key]
+      row = cost[key]
       table += '||' + str(row)+'||'
     table += '\n'
   print table
     
-def futureCostTable(f, tm, lm):
-  cost_table = defaultdict()
+
+def getBaseLineDecoding(f,tm,lm):
+      hypothesis = namedtuple("hypothesis", "logprob, lm_state, predecessor, phrase")
+      initial_hypothesis = hypothesis(0.0, lm.begin(), None, None)
+      stacks = [{} for _ in f] + [{}]
+      stacks[0][lm.begin()] = initial_hypothesis
+      for i, stack in enumerate(stacks[:-1]):
+        for h in sorted(stack.itervalues(),key=lambda h: -h.logprob)[:opts.s]: # prune
+          for j in xrange(i+1,len(f)+1):
+            if f[i:j] in tm:
+              for phrase in tm[f[i:j]]:
+                logprob = h.logprob + phrase.logprob
+                lm_state = h.lm_state
+                for word in phrase.english.split():
+                  (lm_state, word_logprob) = lm.score(lm_state, word)
+                  logprob += word_logprob
+                logprob += lm.end(lm_state) if j == len(f) else 0.0
+                new_hypothesis = hypothesis(logprob, lm_state, h, phrase)
+                if lm_state not in stacks[j] or stacks[j][lm_state].logprob < logprob: # second case is recombination
+                  stacks[j][lm_state] = new_hypothesis 
+      winner = max(stacks[-1].itervalues(), key=lambda h: h.logprob)
+      print extract_english(winner)
+      return winner.logprob
+    
+    
+def futureCostTable(cost_table, f, tm, lm):
+  cost_table[f] = defaultdict()
   lm_state = ()
   for length in range(1, len(f)+1):
-    #pdb.set_trace()
-    #is the +1 needed?
-    #print range(1, len(f)+1)
     for start in range(0, len(f)-length+1):
-      print range(0, len(f)-length+1)
-      print start
-      end = start+length
-      print end
-      cost_table[(start, end)] = float('-inf')
-      for i in range(start+1, end+1):
-          #pdb.set_trace()
-          if start-end > 1:
-            #if they're both in the TM
-            if (f[start:i] in tm) and (f[i:end] in tm):
-            #find the min cost translation
-              sentenceA_cost = float('-inf')
-              sentenceB_cost = float('-inf')
-              
-              for phrase in tm[f[start:i]]:
-                A_temp_cost = 0
-                for word in phrase.english.split():		            
-                  (lm_state, word_logprob) = lm.score(lm_state, word)	
-                  A_temp_cost += word_logprob
-                if (phrase.logprob+A_temp_cost) > sentenceA_cost:
-                  sentenceA_cost = phrase.logprob+A_temp_cost
-                
-              for phrase in tm[f[i:end]]:
-                B_temp_cost = 0  	  
-                for word in phrase.english.split():
-                  (lm_state, word_logprob) = lm.score(lm_state, word)	
-                  B_temp_cost += word_logprob
-                if phrase.logprob+B_temp_cost > sentenceB_cost:
-                  sentenceB_cost = phrase.logprob+B_temp_cost
-                        
-              sentence_cost = sentenceA_cost + sentenceB_cost
-              if sentence_cost > cost_table[(start, end)]:
-                 cost_table[(start, end)] = sentence_cost
-                 
-          elif f[start:end] in tm:   
-            for phrase in tm[f[start:end]]:
-              temp_cost = 0  	  
-              for word in phrase.english.split():		            
-                (lm_state, word_logprob) = lm.score(lm_state, word)	
-                temp_cost += word_logprob               
-              if phrase.logprob > cost_table[(start, end)]:
-                cost_table[(start, end)] = phrase.logprob+temp_cost
-          else:
-              print f[start:end]
-              print 'was not found'
-  printCost(cost_table, f)
+        end = length+start
+        cost_table[(start, start+length)] = getBaseLineDecoding(f[start:end], tm, lm)
   
   
 def hypothesize(stacks, sentence, tm, lm, h, bitmap):
@@ -146,6 +124,7 @@ def hypothesize(stacks, sentence, tm, lm, h, bitmap):
 tm = models.TM(opts.tm, opts.k)
 lm = models.LM(opts.lm)
 french = [tuple(line.strip().split()) for line in open(opts.input).readlines()[:opts.num_sents]]
+future_cost = defaultdict()
 
 
 # tm should translate unknown words as-is with probability 1
@@ -156,8 +135,8 @@ for word in set(sum(french,())):
 sys.stderr.write("Decoding %s...\n" % (opts.input,))
 
 for i,f in enumerate(french):
-  futureCostTable(f[:3], tm, lm)
-  break
+  futureCostTable(future_cost, f, tm, lm)
+  printCost(future_cost, f)
   hypothesis = namedtuple("hypothesis", "logprob, lm_state, predecessor, phrase, bitmap")
   initial_bitmap = [0] * len(f)
   initial_hypothesis = hypothesis(0.0, lm.begin(), None, None, initial_bitmap)

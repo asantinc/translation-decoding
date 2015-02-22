@@ -7,3 +7,4 @@ DREAMT consists of baseline components for homework assignments in the
 
 1. The ALIGNER takes parallel texts and produces word alignments.
 2. The DECODER takes French sentences and a translation model, and produces English sentences.
+3. The RERANKER takes 100-best lists from a decoder and selects the best translation.

@@ -60,6 +60,5 @@ def normalize(input_fname, output_fname, num_sents=100):
     f.close()
     return [mean_feats, std_feats]
 
-#normalize('test.del', 'norm.del', 100)
 
     

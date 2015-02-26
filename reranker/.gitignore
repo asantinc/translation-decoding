@@ -1,1 +1,3 @@
 untracked_out
+*.pyc
+*.py~

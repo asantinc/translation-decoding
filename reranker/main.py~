@@ -11,7 +11,6 @@ def print_scores(lm, tm, lex, score, result_file, length=0):
     else:
         result_file.write(str(lm)+','+str(tm)+','+str(lex)+','+str(score)+';\n')
 
-
 feat_norm = 'data/features/norm/train.'
 feat_unnorm = 'data/features/unnorm/train.'
 features = ['diag','ibm','lex','tm','diag_rev','ibm_rev','lm','untranslated']
@@ -59,7 +58,7 @@ def q2():
     tm = 1
     lm = 0
     outfilename = 'output/q2/'+'lm'+str(lm)+'tm'+str(tm)+'lex'+str(lex)+'.out'
-    f = rerank_basic(lex, tm, lm, length, outfilename)
+    f = rerank_basic(lex, tm, lm, length, update_out(q, lm, tm, lex))
     score = compute_bleu(f)
     print_scores(lm, tm, lex, score, result_file)
 

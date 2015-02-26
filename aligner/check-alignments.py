@@ -1,13 +1,21 @@
 #!/usr/bin/env python
 import optparse
 import sys
+import pdb
 
-optparser = optparse.OptionParser()
-optparser.add_option("-b", "--bitext", dest="bitext", default="data/dev-test-train.de-en", help="Parallel corpus (default data/dev-test-train.de-en)")
-(opts, args) = optparser.parse_args()
-bitext = open(opts.bitext)
 
-for (n, (f_e, a)) in enumerate(zip(bitext, sys.stdin)):
+#sys.stdout = open("Output.txt")
+
+
+#optparser = optparse.OptionParser()
+#optparser.add_option("-b", "--bitext", dest="bitext", default="data/dev-test-train.de-en", help="Parallel corpus (default data/dev-test-train.de-en)")
+#(opts, args) = optparser.parse_args()
+#bitext = open(opts.bitext)
+
+ibmOut  = open("ibm.out")
+bitext = open('data/dev-test-train.de-en')
+
+for (n, (f_e, a)) in enumerate(zip(bitext, ibmOut)):
   (f,e) = f_e.split(' ||| ')
   size_f = len(f.strip().split())
   size_e = len(e.strip().split())
@@ -21,14 +29,14 @@ for (n, (f_e, a)) in enumerate(zip(bitext, sys.stdin)):
     sys.stderr.write("ERROR (%s) line %d is not formatted correctly:\n  %s" % (sys.argv[0],n,a))
     sys.stderr.write("Lines can contain only tokens \"i-j\", where i and j are integer indexes into the French and English sentences, respectively.\n")
     sys.exit(1)
-  sys.stdout.write(a)
+  #sys.stdout.write(a)
 
 warned = False
-for a in (sys.stdin): 
+for a in (ibmOut): 
   if not warned:
     sys.stderr.write("WARNING (%s): alignment file is longer than bitext\n" % sys.argv[0])
     warned = True
-  sys.stdout.write(a)
+  #sys.stdout.write(a)
 
 try:
   if (bitext.next()):

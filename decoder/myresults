@@ -1,0 +1,246 @@
+Aligning...
+NOTE: TM logprobs may be positive since they do not include segmentation
+SENTENCE PAIR:
+honorables sénateurs , que se est - il passé ici , mardi dernier ?
+=============== Sentence 0 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 0
+SENTENCE PAIR:
+un Comité de sélection a été constitué .
+honourable senators here , what happened ? , last Tuesday
+TOTAL LM LOGPROB: -30.797008
+..........ERROR: COULD NOT ALIGN SENTENCE 1
+SENTENCE PAIR:
+je ai assisté hier à la première réunion de ce comité .
+=============== Sentence 1 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 2
+SENTENCE PAIR:
+et je me attendais à ce que le comité avoue que il ne savait trop quoi faire de les sénateurs indépendants .
+a selection committee was . achievement
+TOTAL LM LOGPROB: -21.432205
+......ERROR: COULD NOT ALIGN SENTENCE 3
+SENTENCE PAIR:
+ce qui ne me préoccupe pas tellement pour le instant .
+=============== Sentence 2 ===============
+TOTAL LM LOGPROB: -24.224331
+....ERROR: COULD NOT ALIGN SENTENCE 4
+SENTENCE PAIR:
+les membres de le Comité de sélection peuvent avoir une certaine incidence .
+yesterday I attended the first to meeting of this committee .
+TOTAL LM LOGPROB: -20.436701
+...........ERROR: COULD NOT ALIGN SENTENCE 5
+SENTENCE PAIR:
+sur les travaux que entreprendra un sénateur à le cours de les deux prochaines années .
+=============== Sentence 3 ===============
+TOTAL LM LOGPROB: -24.264976
+....ERROR: COULD NOT ALIGN SENTENCE 6
+SENTENCE PAIR:
+il se agit de un comité important , puisque , en principe , ces neuf sénateurs déterminent à quel comité siégeront certains sénateurs .
+and I expected the committee admits that it does too knew what to do with the senators . independent
+TOTAL LM LOGPROB: -50.006482
+...................ERROR: COULD NOT ALIGN SENTENCE 7
+SENTENCE PAIR:
+je me suis donc présenté à la séance de le comité de hier pour constater que un de les neuf sénateurs était absent .
+=============== Sentence 4 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 8
+SENTENCE PAIR:
+il avait envoyé un remplaçant .
+what will not strike so much for a moment .
+TOTAL LM LOGPROB: -18.574131
+..........ERROR: COULD NOT ALIGN SENTENCE 9
+SENTENCE PAIR:
+honorables sénateurs , je ne nommerai personne .
+=============== Sentence 5 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 10
+SENTENCE PAIR:
+vous voyez donc à quel point je suis gentil , ne est - ce pas ?
+the members of the selection committee can show some . impact
+TOTAL LM LOGPROB: -28.040325
+...........ERROR: COULD NOT ALIGN SENTENCE 11
+SENTENCE PAIR:
+les sénateurs devront faire leurs propres recherches pour trouver qui était en faute .
+=============== Sentence 6 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 12
+SENTENCE PAIR:
+lorsque une personne accepte un travail , elle doit le accomplir .
+on the business that a senator reshape over the next two years .
+TOTAL LM LOGPROB: -26.315544
+.............ERROR: COULD NOT ALIGN SENTENCE 13
+SENTENCE PAIR:
+les femmes qui siègent à le Sénat ont prouvé .
+=============== Sentence 7 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 14
+SENTENCE PAIR:
+elles remplissaient leur devoir beaucoup mieux que la majorité de les hommes à le Sénat .
+it is a committee , important because , in principle , these nine senators to determine what sit committee some senators .
+TOTAL LM LOGPROB: -51.766439
+......................ERROR: COULD NOT ALIGN SENTENCE 15
+SENTENCE PAIR:
+je me souviens de les séances que a tenues le sous - comité de les anciens combattants en février 1998 .
+=============== Sentence 8 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 16
+SENTENCE PAIR:
+Ni le Sénat ni la Chambre de les communes ne siégeait à ce moment - là .
+therefore my introduced in the sitting of the committee to yesterday to realize that one of the nine senators . not attend
+TOTAL LM LOGPROB: -53.502388
+......................ERROR: COULD NOT ALIGN SENTENCE 17
+SENTENCE PAIR:
+trois sénateurs libéraux ont assisté à les délibérations de le comité , tous de les femmes .
+=============== Sentence 9 ===============
+TOTAL LM LOGPROB: -24.427557
+....ERROR: COULD NOT ALIGN SENTENCE 18
+SENTENCE PAIR:
+les dirigeants de le Sénat ne ont pu trouver un homme pour siéger à ce comité .
+it was sent a . replacement
+TOTAL LM LOGPROB: -17.801004
+......ERROR: COULD NOT ALIGN SENTENCE 19
+SENTENCE PAIR:
+je pourrais vous citer , mot pour mot , ce que le honorable sénateur Carstairs a répondu à la question que je lui ai posée .
+=============== Sentence 10 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 20
+SENTENCE PAIR:
+je lui ai demandé : « Quels étaient les critères appliqués ? »
+honourable senators name , I do person .
+TOTAL LM LOGPROB: -23.606056
+........ERROR: COULD NOT ALIGN SENTENCE 21
+SENTENCE PAIR:
+elle a déclaré que elle était la première à aborder la question de la représentation de les femmes dans un rapport .
+=============== Sentence 11 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 22
+SENTENCE PAIR:
+que elle avait rédigé sur les associations parlementaires en 1993 .
+you see how now to friendly i am , ' t it ?
+TOTAL LM LOGPROB: -33.067250
+.............ERROR: COULD NOT ALIGN SENTENCE 23
+SENTENCE PAIR:
+Les délégations à le époque étaient formées uniquement de hommes .
+=============== Sentence 12 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 24
+SENTENCE PAIR:
+À ce sujet , je rappelle que je ai été remplacé par le sénateur Finestone pendant quelques années .
+the senators will have their own research who was on to find fault .
+TOTAL LM LOGPROB: -33.275167
+..............ERROR: COULD NOT ALIGN SENTENCE 25
+SENTENCE PAIR:
+toutefois , je attends encore le occasion de réintégrer mon association préférée .
+=============== Sentence 13 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 26
+SENTENCE PAIR:
+honorables sénateurs , je ne sais pas comment ni quand la Chambre prendra une décision à le sujet de ces deux rapports .
+when an individual work accepts an the , it must do .
+TOTAL LM LOGPROB: -26.518218
+............ERROR: COULD NOT ALIGN SENTENCE 27
+SENTENCE PAIR:
+chaque fois que les sénateurs sont interviewés à la télévision .
+=============== Sentence 14 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 28
+SENTENCE PAIR:
+ou interrogés par un groupe de étudiants , de journalistes ou autres .
+the women who are sitting in the Senate . have proven
+TOTAL LM LOGPROB: -24.090622
+...........ERROR: COULD NOT ALIGN SENTENCE 29
+SENTENCE PAIR:
+que disons - nous ?
+=============== Sentence 15 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 30
+SENTENCE PAIR:
+ce est vrai , et je y crois .
+they remplissaient their duty much more that the majority of the men in the Senate .
+TOTAL LM LOGPROB: -33.272453
+................ERROR: COULD NOT ALIGN SENTENCE 31
+SENTENCE PAIR:
+toutefois , cela devrait se traduire dans les faits .
+=============== Sentence 16 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 32
+SENTENCE PAIR:
+je ne crois pas à la substitution .
+i remember of the sessions held that the committee to the in February of veterans 1998 .
+TOTAL LM LOGPROB: -38.371148
+.................ERROR: COULD NOT ALIGN SENTENCE 33
+SENTENCE PAIR:
+si un sénateur accepte un poste à le sein de un comité , il ou elle devrait participer à toutes les réunions prévues .
+=============== Sentence 17 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 34
+SENTENCE PAIR:
+nous ne sommes pas de les députés auxquels on dit dans les corridors :
+the Senate Ni or sitting in the House of Commons do not that time .
+TOTAL LM LOGPROB: -28.162932
+...............ERROR: COULD NOT ALIGN SENTENCE 35
+SENTENCE PAIR:
+« Présentez - vous à le comité aujourd' hui et , après deux ans de études , il y aura un vote final en comité . »
+=============== Sentence 18 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 36
+SENTENCE PAIR:
+ils ne savent même pas ce sur quoi ils se prononcent , mais ils lèvent la main lorsque leurs dirigeants lèvent la leur .
+three senators saw Liberals to proceedings of the committee , all of women .
+TOTAL LM LOGPROB: -33.202910
+..............ERROR: COULD NOT ALIGN SENTENCE 37
+SENTENCE PAIR:
+ils ne savent absolument pas ce qui se est passé .
+=============== Sentence 19 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 38
+SENTENCE PAIR:
+honorables sénateurs , les mots « continuité » et « dévouement » sont à la mode dans nos discours .
+the officers of the Senate could not find a man to this committee .
+TOTAL LM LOGPROB: -27.382881
+..............ERROR: COULD NOT ALIGN SENTENCE 39
+SENTENCE PAIR:
+À le cours de les deux prochaines semaines , commençons à réfléchir à la façon dont nous allons aborder la situation de les sénateurs indépendants .
+=============== Sentence 20 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 40
+SENTENCE PAIR:
+si nous ne le faisons pas , je créerai mon propre comité de parlementaires qui se intéressent à les affaires internationales .
+i could cite word about , word , what the hon. senator Carstairs took answered the question I formed .
+TOTAL LM LOGPROB: -46.441695
+....................ERROR: COULD NOT ALIGN SENTENCE 41
+SENTENCE PAIR:
+personne ne peut nous en priver .
+=============== Sentence 21 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 42
+SENTENCE PAIR:
+son Honneur le Président :
+i asked him : " Quels were the criteria are as follows ? "
+TOTAL LM LOGPROB: -28.971125
+..............ERROR: COULD NOT ALIGN SENTENCE 43
+SENTENCE PAIR:
+si aucun autre honorable sénateur ne désire prendre la parole , vous plaît - il , honorables sénateurs , de adopter la motion ?
+=============== Sentence 22 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 44
+SENTENCE PAIR:
+de les voix :
+it has said that it was the first to address the representation of women . in a report
+TOTAL LM LOGPROB: -35.460067
+..................ERROR: COULD NOT ALIGN SENTENCE 45
+SENTENCE PAIR:
+de accord .
+=============== Sentence 23 ===============
+TOTAL LM LOGPROB: -25.530972
+....ERROR: COULD NOT ALIGN SENTENCE 46
+SENTENCE PAIR:
+( la motion est adoptée , et le rapport est adopté . )
+that it had on the drafted parliamentary associations in 1993 .
+TOTAL LM LOGPROB: -25.025446
+...........ERROR: COULD NOT ALIGN SENTENCE 47
+
+Total corpus log probability (LM+TM): -1364.587472
+ERROR: French and English files are not the same length! Only complete output can be graded!
+ERROR: There were 48 unaligned sentences! Only sentences that align under the model can be graded!

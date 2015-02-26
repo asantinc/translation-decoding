@@ -1,5 +1,6 @@
 import sys
 from collections import defaultdict
+import pdb
 
 def mean(data):
     """Return the sample arithmetic mean of data."""
@@ -29,27 +30,36 @@ The normalized values are written out to output_fname
 '''
 def normalize(input_fname, output_fname, num_sents=100):
     f = open(input_fname, 'r')
+    lines = f.read().splitlines()
     feature_values = defaultdict()
     counter = 0
-    for i, line in enumerate(f):
-        feature_values[num_sents/100].append(float(line.strip()))
+
+    for i, line in enumerate(lines):
+        if ((i % num_sents) == 0):
+            feature_values[i/num_sents] = []
+        feature_values[i/num_sents].append(float(line))
 
     mean_feats = defaultdict()
     std_feats = defaultdict()
 
     #find the mean and variance for each sentence
-    for i in len(f)/num_sents:
+    for i in range(len(lines)/num_sents):
         mean_feats[i] = mean(feature_values[i])
         std_feats[i] = pstdev(feature_values[i])
 
     #normalize the data for each batch of translations
     f_out = open(output_fname, 'w')
-    for i, line in enumerate(f):
-        new_val = (float(line.strip())-mean_feats[i/100])/std_feats[i/100]
+    for i, line in enumerate(lines):
+        if (std_feats[i/num_sents] != 0):
+            new_val = ((float(line.strip())-mean_feats[i/num_sents])) /std_feats[i/num_sents]
+        else: # if there is zero std.dev and we centre all data around zero, the new_value must be zero
+            new_val = 0
         f_out.write(str(new_val)+'\n')
     
     f_out.close()
     f.close()
     return [mean_feats, std_feats]
+
+#normalize('test.del', 'norm.del', 100)
 
     

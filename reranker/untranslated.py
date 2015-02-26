@@ -21,6 +21,4 @@ def untranslated_feat(infile, outfile):
         f_out.write( str(len(untrans)) + '\n')
     f_out.close()
 
-
-
 untranslated_feat( 'data/train.100best_stripped', 'scores.del')

@@ -11,11 +11,6 @@ def print_scores(q, lm, tm, lex, score, result_file, length=0):
     else:
         result_file.write(str(lm)+','+str(tm)+','+str(lex)+','+str(score)+';\n')
 
-
-feat_norm = 'data/features/norm/train.'
-feat_unnorm = 'data/features/unnorm/train.'
-features = ['diag','ibm','lex','tm','diag_rev','ibm_rev','lm','untranslated']
-
 ################################
 #	            Q1
 ################################

@@ -3,10 +3,18 @@ from compute_bleu_function import *
 from collections import defaultdict
 import sys
 
+feat_norm = 'data/features/norm/train.'
+feat_unnorm = 'data/features/unnorm/train.'
+features = ['diag','ibm','lex','tm','diag_rev','ibm_rev','lm','untranslated']
 
 ##############################
 #       Challenge
 ##############################
+'''
+We should use the rerankfun.rerank function, and pass in the following: 
+rerank(sentences, scores, weights, outname)
+'''
+
 
 '''
 feat_scores = defaultdict()

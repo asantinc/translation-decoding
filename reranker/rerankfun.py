@@ -4,7 +4,19 @@ import sys
 from collections import defaultdict
 
 
-#features is a dictionary of features where the key is the name of the feature file, and the value is the weight for that feature
+'''
+Ranks each group of sentences in 'sentences' using the features provided, with their corresponding weights. 
+@sentences: the list of sentences to be scored
+@sentences type: list
+
+@scores: a dictionary containing list of scores per feature
+@scores type: dictionary
+
+@weights: dictionary with weight per feature
+@weights type: dictionary
+
+@outname: file in which the best sentences are written to
+'''
 def rerank(sentences, scores, weights, outname):
     outfile = open(outname, 'w')
 

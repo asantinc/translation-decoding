@@ -3,8 +3,6 @@ from compute_bleu_function import *
 from collections import defaultdict
 import os
 import sys
-from random import randint
-from math import fabs
 
 feat_norm = 'data/train/norm/'
 feat_unnorm = 'data/train/unnorm/'

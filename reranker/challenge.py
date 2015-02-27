@@ -16,16 +16,29 @@ We should use the rerankfun.rerank function, and pass in the following:
 rerank(sentences, scores, weights, outname)
 '''
 
-class PRO(train_location='train/', test_location='dev+test/', num_data=400,tps=100):
+class PRO(object):
 
-    def __init__(self):
+    def __init__(self,
+                  train_location='train/', 
+                  test_location='dev+test/', 
+                  num_data=400,
+                  tps=100
+                  tau=5000,
+                  alpha=0.1,
+                  sample_number=100
+                  eta=0.1
+                  epochs=5):
 
-<<<<<<< HEAD
         self.train_location = train_location
         self.test_location = test_location
         self.tps = tps
         self.num_train = 40000
         self.num_test = 80000
+        self.tau = tau
+        self.alpha = alpha
+        self.sample_number = sample_number
+        self.eta = eta
+        self.epochs = epochs
 
         # load the training data: translations, references and source
         translations_trn = self.structure(train_location)
@@ -90,8 +103,31 @@ class PRO(train_location='train/', test_location='dev+test/', num_data=400,tps=1
                 bleu_score = individual_bleu(translation, ref)
                 bleu_list[rus_ind].append(bleu_score)
         return bleu_list
+         
+    def bleu_difference(self,s1, s2, reference, alpha):
+        stats_s1 = bleu.bleu_stats(s1, reference)
+        stats_s2 = bleu.bleu_stats(s2, reference)
 
-=======
+        s1_score = bleu.bleu(stats_s1)
+        s2_score = bleu.bleu(stats_s2)
+
+        return fabs(s1_score-s2_score)
+
+
+    def getSamples(self, best_candidates, ref_sent):
+        sample = []
+        for i in range(self.tau):
+            s1 = best_candidates[randint(0, len(nbests))]
+            s2 = best_candidates[randint(0, len(nbests))]
+            if (bleu_difference(s1, s2, ref) > self.alpha):
+                sample.append(s1, s2)
+            elif s1 != s2:
+                sample.append(s2, s1)
+            else:
+                continue
+        sample.sort(key=lambda t: t[1]-t[2]) #in ascending order
+        return sample[-self.sample_number:] 
+
 translations_list = structure(dataset='dev+test')
 scores = build_features(dataset='dev+test', num_data=800, norm=False)
 weights = [1,-1,1]

@@ -60,5 +60,14 @@ def normalize(input_fname, output_fname, num_sents=100):
     f.close()
     return [mean_feats, std_feats]
 
+feat_unnorm = 'dev+test/unnorm/'
+feat_norm = 'dev+test/norm/'
+
+for var in ['lex', 'lm', 'tm']:
+	normalize(feat_unnorm+var+'.out', feat_norm+var+'.out')
+
+
+
+
 
     

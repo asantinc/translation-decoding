@@ -6,14 +6,14 @@ from collections import Counter
 # (c, r, numerator1, denominator1, ... numerator4, denominator4)
 # Summing the results of multiple calls to this function element-wise yields
 # a vector of statistics that can be used to compute BLEU (below)
-def bleu_stats(hypothesis, reference):
+def bleu_stats(hypothesis, reference,alpha=1):
   yield len(hypothesis)
   yield len(reference)
   for n in xrange(1,5):
     s_ngrams = Counter([tuple(hypothesis[i:i+n]) for i in xrange(len(hypothesis)+1-n)])
     r_ngrams = Counter([tuple(reference[i:i+n]) for i in xrange(len(reference)+1-n)])
-    yield max([sum((s_ngrams & r_ngrams).values()), 0])
-    yield max([len(hypothesis)+1-n, 0])
+    yield max([sum((s_ngrams & r_ngrams).values()) + alpha, 0])
+    yield max([len(hypothesis)+1-n + alpha, 0])
 
 # Compute BLEU from collected statistics obtained by call(s) to bleu_stats
 def bleu(stats):

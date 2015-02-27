@@ -2,45 +2,46 @@
 import optparse
 import sys
 import pdb
+#from numpy import *
 from collections import defaultdict
 
 
 '''
-Ranks each group of sentences in 'sentences' using the features provided, with their corresponding weights. 
-@sentences: the list of sentences to be scored
-@sentences type: list
+Ranks each group of translations in 'translations' using the features provided, with their corresponding weights. 
+@translations: the list of lists of translations to be scored, one list of translations for each Russian sentence
+@translations type: list
 
-@scores: a dictionary containing list of scores per feature
-@scores type: dictionary
+@scores: a list of lists of feature vector tuples representing translations, one list of feature vectors for each Russian sentence
+@scores type: list
 
-@weights: dictionary with weight per feature
-@weights type: dictionary
+@weights: list of weights for the features
+@weights type: list
 
-@outname: file in which the best sentences are written to
+@outname: file in which the best translations are written to
+@outname type: string
 '''
-def rerank(sentences, scores, weights, outname):
+def rerank(translations_list, scores, weights, outname):
   outfile = open(outname, 'w')
   (best_score, best) = (-1e300, '')  
-  num_sents = (len(sentences))/100
+  num_sents = (len(translations_list))
 
-  for s in xrange(0, num_sents):  #for all translations
+  for rus_ind, translations in enumerate(translations_list):  # for all Russian sentences
     (best_score, best) = (-1e300, '')
-    for j in xrange(0, 100):  #loop over this sentence's candidates
-      current_sent = (s*100)+j
-      sent = sentences[current_sent]
+    for tr_ind, translation in enumerate(translations):  # loop over this sentence's translations
       score = 0.0
-      for feat, w in weights.iteritems():
-        print feat+','+w
-        score += float(w) * float(scores[feat][current_sent])
-        if score > best_score:
-          (best_score, best_sent) = (score, sent)
-
+      for w_ind, w in enumerate(weights):
+        score += w * scores[rus_ind][tr_ind][w_ind] # add the weighted feature score for this translation
+      if score > best_score:
+        (best_score, best_translation) = (score, translation)
     try:  
-      outfile.write("%s\n" % best_sent)
+      outfile.write("%s\n" % best_translation)
     except (Exception):
       sys.exit(1)
 
   outfile.close()
+
+
+
 
 def rerank_basic(lex=1, tm=1, lm=1, length=0, outfilename='default'):
     outfile = open(outfilename,'w')

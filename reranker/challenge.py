@@ -3,6 +3,7 @@ from compute_bleu_function import *
 from collections import defaultdict
 import os
 import sys
+from namedlist import namedlist
 
 feat_norm = 'data/train/norm/'
 feat_unnorm = 'data/train/unnorm/'
@@ -41,15 +42,28 @@ class PRO(object):
         self.epochs = epochs
 
         # load the training data: translations, references and source
-        translations_trn = self.structure(train_location)
-        references_trn = open(train_location+'train.ref','r')
-        source_trn = open(train_location+'src.out','r')
+        self.data = build_data()
+        data_point = namedlist('blue', 'features')
 
-        # build the feature vectors for each translation
-        scores_trn = self.build_features(train_location, num_train)
+    def build_data(self):
+        self.data = defaultdict()
+        references_trn = open(self.train_location+'train.ref','r')
+        source_trn = open(self.train_location+'src.out','r')
 
-        # collect the BLEU scores for each translation
+        translations = self.structure(self.train_location)
+
+        feature_vectors = self.build_features(self.train_location, self.num_train)
         bleu_list = self.collect_bleu_scores()
+
+        for r, ref in enumerate(references_trn):
+            self.data[ref] = defaultdict()
+            for t, trans in enumerate(translations[r]):
+                blue_score = bleu_list[r][t]
+                feature_vec = feature_vectors[r][t]
+                self.data[ref][trans] = data_point(blue_score, feature_vec)
+                
+            
+            
 
     def build_features(self, data_location, num_data, norm=True):
         '''
@@ -128,6 +142,20 @@ class PRO(object):
         sample.sort(key=lambda t: t[1]-t[2]) #in ascending order
         return sample[-self.sample_number:] 
 
+    
+
+ 
+    #def perceptron(self, theta, s1, s2):
+        
+
+do a perceptron update of the parameters theta:
+   if theta * s1.features <= theta * s2.features:
+       mistakes += 1
+       theta += eta * (s1.features - s2.features) # this is vector addition!
+
+
+
+''' Test
 translations_list = structure(dataset='dev+test')
 scores = build_features(dataset='dev+test', num_data=800, norm=False)
 weights = [1,-1,1]
@@ -135,11 +163,6 @@ outname = 'dev+test/delete.out'
 rerank(translations_list, scores, weights, outname)
 print compute_bleu(outname)
 
-def collect_bleu_scores():
-    pass
+'''
 
 
-
-
-
->>>>>>> 7fedbb64a25ba6a31c743459237088ec18cb0a49

@@ -46,6 +46,10 @@ class PRO(object):
         data_point = namedlist('blue', 'features')
 
     def build_data(self):
+        '''
+        Builds a dictionary of dictionaries. The 1st is indexed with a russian sentence. The 2nd with each candidate translation for that reference. 
+        The value of the second dictionary is a data_point namedlist, which contains the blue score and the feature_vector values for the translation.
+        '''
         self.data = defaultdict()
         references_trn = open(self.train_location+'train.ref','r')
         source_trn = open(self.train_location+'src.out','r')
@@ -128,19 +132,35 @@ class PRO(object):
         return fabs(s1_score-s2_score)
 
 
-    def getSamples(self, best_candidates, ref_sent):
+    def getSamples(self, ref):
+        '''
+        Get tau translation pairs (s1,s2) from the translations indexed by the reference translation.
+        A pair (s1,s2) is in the output if BLEU(s1) - BLEU(s2) > alpha, a certain threshold.
+        '''
         sample = []
+        best_candidates = self.data[ref] # get the dictionary of relevant translations
         for i in range(self.tau):
-            s1 = best_candidates[randint(0, len(nbests))]
-            s2 = best_candidates[randint(0, len(nbests))]
-            if (bleu_difference(s1, s2, ref) > self.alpha):
-                sample.append(s1, s2)
-            elif s1 != s2:
-                sample.append(s2, s1)
+            # pick two translations from the dictionary at random
+            t1, t2 = rnd.sample(best_candidates.keys(),2)
+            diff = individual_bleu(t1, ref) - individual_bleu(t2, ref)
+            if diff > self.alpha):
+                sample.append(t1, t2, diff)
+            elif diff < -self.alpha)::
+                sample.append(t2, t1)
             else:
                 continue
-        sample.sort(key=lambda t: t[1]-t[2]) #in ascending order
+        sample.sort(key=lambda a: math.fabs(a[2])) #in ascending order
         return sample[-self.sample_number:] 
+
+
+    def score(self,translation)
+        '''
+        Given a translation, return its score according to the linear model with the current weights
+        '''
+        score = 0
+        for i in range(num_features):
+            score += weights[i] * translation.features[i]
+        return score
 
     
 

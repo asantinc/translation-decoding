@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import optparse
 import sys
+import pdb
 
 import bleu
 def compute_bleu(file_name):
@@ -10,6 +11,7 @@ def compute_bleu(file_name):
 
     stats = [0 for i in xrange(10)]
     for (r,h) in zip(ref, hyp):
+      pdb.set_trace()
       stats = [sum(scores) for scores in zip(stats, bleu.bleu_stats(h,r))]
     return (100 * bleu.bleu(stats))
 

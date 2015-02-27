@@ -163,9 +163,9 @@ feat_norm = 'dev+test/norm/'
 
 q1(sentences, feat_unnorm, feat_norm)
 q1_old()
-#q2()
-#q4()
-#q5()
+q2()
+q4()
+q5()
 
 
 

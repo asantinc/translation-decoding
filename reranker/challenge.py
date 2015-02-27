@@ -3,7 +3,7 @@ from compute_bleu_function import *
 from collections import defaultdict
 import os
 import sys
-import pdb
+
 feat_norm = 'data/train/norm/'
 feat_unnorm = 'data/train/unnorm/'
 features = ['diag','ibm','lex','tm','diag_rev','ibm_rev','lm','untranslated']
@@ -20,6 +20,7 @@ class PRO(train_location='train/', test_location='dev+test/', num_data=400,tps=1
 
     def __init__(self):
 
+<<<<<<< HEAD
         self.train_location = train_location
         self.test_location = test_location
         self.tps = tps
@@ -90,3 +91,19 @@ class PRO(train_location='train/', test_location='dev+test/', num_data=400,tps=1
                 bleu_list[rus_ind].append(bleu_score)
         return bleu_list
 
+=======
+translations_list = structure(dataset='dev+test')
+scores = build_features(dataset='dev+test', num_data=800, norm=False)
+weights = [1,-1,1]
+outname = 'dev+test/delete.out'
+rerank(translations_list, scores, weights, outname)
+print compute_bleu(outname)
+
+def collect_bleu_scores():
+    pass
+
+
+
+
+
+>>>>>>> 7fedbb64a25ba6a31c743459237088ec18cb0a49

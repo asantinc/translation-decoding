@@ -18,7 +18,7 @@ def q1():
     result_file = open('output/q1/result', 'w')
     lex = 1
     tm = 1
-    lm = 1
+    lm = -1
     length = 0
     outfilename = 'output/q1/fliplm_unnorm.out'
     f = rerank_basic(lex, tm, lm, length, outfilename)

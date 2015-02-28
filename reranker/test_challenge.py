@@ -3,10 +3,12 @@ from compute_bleu_function import *
 from math import fabs
 import os
 
-'''
-Test that the PRO class outputs the same value as the default 27.3509457562
-'''
+
 def test1():
+    '''
+    Test that the PRO class outputs the same value as the default 27.3509457562
+    # TODO: we could add a couple more number tests
+    '''
     pro = PRO(train_location='dev+test/')
     temp_file = 'temp.out'  #will be removed
     outfile = open(temp_file,'w')
@@ -31,4 +33,20 @@ def test1():
         sys.stderr.write('FAILED: Test 1 \n')
     os.remove(temp_file)
 
+
+
+def test2():
+    '''
+    Test Pro's ranking and BLEU scoring method
+    '''
+    pro = PRO(train_location='dev+test/')
+    out, b = pro.rank_and_bleu()
+    os.remove(out)
+    try:
+        assert (fabs(b - 27.3509457562) < 1e-9)
+        sys.stderr.write('PASSED: Test 2 \n')        
+    except (AssertionError):
+        sys.stderr.write('FAILED: Test 2 \n')
+
 test1()
+test2()

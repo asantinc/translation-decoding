@@ -23,22 +23,28 @@ class PRO(object):
                   sample_number=100,
                   eta=0.1,
                   epochs=5,
-                  weights=[1.,1.,1.]):
+                  weights=None ):
         
         self.train_location = train_location
+        
         self.tps = tps
         self.num_train = 800
         self.num_test = 800
+
+        #percentron training variables
         self.tau = tau
-        
         self.alpha = alpha
         self.sample_number = sample_number
         self.eta = eta
-        self.weights = weights
-        self.num_feats=len(self.weights)
         self.epochs = epochs
         self.pseudocount = 0.0
+
+        #TODO: do I need this references = None??
         self.references = None
+
+        if weights is None: weights = { 'lm':1. , 'tm':1., 'lex': 1.}  
+        self.weights = weights
+        self.feats = self.weights.keys()
 
 	    # Build up an ordered list of references
         self.references = self.build_ordered_list(self.train_location+'ref.out')
@@ -101,18 +107,21 @@ class PRO(object):
         of its translations.
         '''
         normalised = 'norm/' if norm else 'unnorm/'
-        feature_locations = [self.train_location + normalised + loc for loc in os.listdir(self.train_location+normalised)]
-
-        features = []
-        for location in feature_locations:
-            feature = self.build_ordered_list(location)
+        feature_locations = {loc: (self.train_location + normalised + loc) for loc in os.listdir(self.train_location+normalised) if loc[:-4] in self.feats}
+        features = {}
+        for k,v in feature_locations.iteritems():
+            feature = self.build_ordered_list(v)
+            #TODO: figure this out for the train/ case
             assert len(feature) == num_data * self.tps
             feature = self.structure(feature)
-            features.append(feature)
+            features[k[:-4]] = feature
         
         for i,ref in enumerate(self.references):
             for j, t in enumerate(self.translations[i]):
-                feat_vec = tuple([float(feature[i][j]) for feature in features])
+                feat_vec = {}
+                for f in self.feats:
+                    curr_feat = features[f][i][j]
+                    feat_vec[f] = curr_feat
                 self.data[ref][t].features = feat_vec
 
     def structure(self, dataset):
@@ -176,8 +185,8 @@ class PRO(object):
         Given a translation, return its score according to the linear model with the current weights
         '''
         score = 0
-        for i in range(self.num_feats):
-            score += self.weights[i] * float(translation_vector[i])
+        for f in self.feats:
+            score += self.weights[f] * float(translation_vector[f])
         return score, translation_vector
 
     def learn_weights(self):
@@ -194,15 +203,15 @@ class PRO(object):
         for samp in samples:
             s1 = samp[0]
             s2 = samp[1]
-            for i, w in enumerate(self.weights):
+            for i, f in enumerate(self.feats):
                 s1_feats = self.data[ref][s1].features
                 s2_feats = self.data[ref][s2].features
                 
-                if w * s1_feat[i] <= w * s2_feat[i]:
+                if w * s1_feat[f] <= w * s2_feat[f]:
                     gradient = 0
-                    for j in self.weights:                
-                        gradient += self.eta * (s1_feat[j] - s2_feat[j]) # this is vector addition!
-                    self.weights[i] = gradient
+                    for feat in self.feats:                
+                        gradient += self.eta * (s1_feat[feat] - s2_feat[feat]) # this is vector addition!
+                    self.weights[f] = gradient
 
     def rank_and_bleu(self, out='pro_best_trans.out'):
         outfile = open(out,'w')
@@ -219,8 +228,8 @@ class PRO(object):
             outfile.write(best_t+'\n')
 
         outfile.close()
-        b = compute_bleu(temp_file)
-        sys.stderr.write('BLEU: '+str(b))
+        b = compute_bleu(out)
+        return out , b
 
 if __name__ == "__main__":
     #weights = (('lex',1.), ('lm', 1.), ('tm', 1.))

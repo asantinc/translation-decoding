@@ -6,14 +6,14 @@ from collections import Counter
 # (c, r, numerator1, denominator1, ... numerator4, denominator4)
 # Summing the results of multiple calls to this function element-wise yields
 # a vector of statistics that can be used to compute BLEU (below)
-def bleu_stats(hypothesis, reference,alpha=1):
+def bleu_stats(hypothesis, reference,pseudocount=0):
   yield len(hypothesis)
   yield len(reference)
   for n in xrange(1,5):
     s_ngrams = Counter([tuple(hypothesis[i:i+n]) for i in xrange(len(hypothesis)+1-n)])
     r_ngrams = Counter([tuple(reference[i:i+n]) for i in xrange(len(reference)+1-n)])
-    yield max([sum((s_ngrams & r_ngrams).values()) + alpha, 0])
-    yield max([len(hypothesis)+1-n + alpha, 0])
+    yield max([sum((s_ngrams & r_ngrams).values()) + pseudocount, 0])
+    yield max([len(hypothesis)+1-n + pseudocount, 0])
 
 # Compute BLEU from collected statistics obtained by call(s) to bleu_stats
 def bleu(stats):
@@ -23,3 +23,8 @@ def bleu(stats):
   log_bleu_prec = sum([math.log(float(x)/y) for x,y in zip(stats[2::2],stats[3::2])]) / 4.
   return math.exp(min([0, 1-float(r)/c]) + log_bleu_prec)
 
+#TODO: change pseudocount
+def individual_bleu(ref, hyp, pseudocount=0):
+    stats = [0 for i in xrange(10)]
+    stats = [sum(scores) for scores in zip(stats, bleu_stats(hyp, ref, pseudocount))]
+    return (100 * bleu(stats))

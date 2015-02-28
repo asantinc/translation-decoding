@@ -1,3 +1,4 @@
 untracked_out
 *.pyc
 *.py~
+.__afs*

@@ -8,9 +8,6 @@ from namedlist import namedlist
 import pdb
 from math import fabs
 
-feat_norm = 'data/train/norm/'
-feat_unnorm = 'data/train/unnorm/'
-features = ['diag','ibm','lex','tm','diag_rev','ibm_rev','lm','untranslated']
 
 ##############################
 #       Challenge
@@ -20,16 +17,15 @@ class PRO(object):
 
     def __init__(self,
                   train_location='train/', 
-                  test_location='dev+test/',
                   tps=100,
                   tau=5000,
                   alpha=0.1,
                   sample_number=100,
                   eta=0.1,
-                  epochs=5):
-
+                  epochs=5,
+                  weights=[1.,1.,1.]):
+        
         self.train_location = train_location
-        self.test_location = test_location
         self.tps = tps
         self.num_train = 800
         self.num_test = 800
@@ -38,7 +34,7 @@ class PRO(object):
         self.alpha = alpha
         self.sample_number = sample_number
         self.eta = eta
-        self.weights = [1.,1.,1.]
+        self.weights = weights
         self.num_feats=len(self.weights)
         self.epochs = epochs
         self.pseudocount = 0.0
@@ -49,14 +45,23 @@ class PRO(object):
         
         #Build data array, that contains the translations per reference, with their scores and features
         self.data = self.build_data()
-        self.build_features(self.train_location, self.num_train, norm=False)
+        self.build_features(self.num_train, norm=False)
         self.collect_bleu_scores(write=False)   
 
 
-    '''
-    Opens a file, produces a list with lines, and closes the file. This helps ensure that files close.
-    '''
-    def build_ordered_list(self, filename):
+    #TODO: What order do the weights appear in?
+    def set_weights(self, weight_vector):
+        '''
+        Update the class weights values to a different set of weights, if their lengths match
+        '''
+        assert len(weight_vector) == len(self.weights)
+        self.weights = weight_vector
+
+
+    def build_ordered_list(self, filename):    
+        '''
+        Opens a file, produces a list with lines, and closes the file. This helps ensure that files close.
+        '''
         f = open(filename,'r')
         ordered = [line.rstrip('\n') for line in f]
         f.close()
@@ -83,7 +88,7 @@ class PRO(object):
         return data  
             
 
-    def build_features(self, data_location, num_data, norm=True):
+    def build_features(self, num_data, norm=True):
         '''
         Given a dataset, build feature vectors for each of its translations.
         Requirements: a directory with the name dataset, which contains folders called 'norm' and 'unnorm'    
@@ -96,11 +101,11 @@ class PRO(object):
         of its translations.
         '''
         normalised = 'norm/' if norm else 'unnorm/'
-        feature_locations = os.listdir(data_location+normalised)
+        feature_locations = [self.train_location + normalised + loc for loc in os.listdir(self.train_location+normalised)]
+
         features = []
         for location in feature_locations:
-            feature = self.build_ordered_list(data_location+normalised+location)
-            
+            feature = self.build_ordered_list(location)
             assert len(feature) == num_data * self.tps
             feature = self.structure(feature)
             features.append(feature)
@@ -144,19 +149,8 @@ class PRO(object):
                     bleu_score = bleu_scores_list[i][j]
                     translations[t].bleu = bleu_score
         
-            
-         
-    def bleu_difference(self,s1, s2, reference, alpha):
-        stats_s1 = bleu.bleu_stats(s1, reference)
-        stats_s2 = bleu.bleu_stats(s2, reference)
-
-        s1_score = bleu.bleu(stats_s1)
-        s2_score = bleu.bleu(stats_s2)
-
-        return fabs(s1_score-s2_score)
-
-
-    def getSamples(self, ref):
+          
+    def get_samples(self, ref):
         '''
         Get tau translation pairs (s1,s2) from the translations indexed by the reference translation.
         A pair (s1,s2) is in the output if BLEU(s1) - BLEU(s2) > alpha
@@ -186,21 +180,62 @@ class PRO(object):
             score += self.weights[i] * float(translation_vector[i])
         return score, translation_vector
 
+    def learn_weights(self):
+        for i in range(self.epochs):
+            for ref in self.references:
+                samples = self.get_samples(ref)
+                self.perceptron_update(samples, ref)
+	    return self.weights
 
+    
+    def perceptron_update(self, samples, ref):
+        #do learning
+        #update self.weights
+        for samp in samples:
+            s1 = samp[0]
+            s2 = samp[1]
+            for i, w in enumerate(self.weights):
+                s1_feats = self.data[ref][s1].features
+                s2_feats = self.data[ref][s2].features
+                
+                if w * s1_feat[i] <= w * s2_feat[i]:
+                    gradient = 0
+                    for j in self.weights:                
+                        gradient += self.eta * (s1_feat[j] - s2_feat[j]) # this is vector addition!
+                    self.weights[i] = gradient
 
+    def rank_and_bleu(self, out='pro_best_trans.out'):
+        outfile = open(out,'w')
 
+        for r, ref in enumerate(self.references):
+            best, best_t = (-1e300, '')
+            for t in self.translations[r]:
+                t_vec = self.data[ref][t].features
+                curr_score, translation_vector = self.score(t_vec)
 
+                if curr_score > best:
+                    (best, best_t) = (curr_score, t)
+            
+            outfile.write(best_t+'\n')
 
+        outfile.close()
+        b = compute_bleu(temp_file)
+        sys.stderr.write('BLEU: '+str(b))
 
+if __name__ == "__main__":
+    #weights = (('lex',1.), ('lm', 1.), ('tm', 1.))
+    #pro_train = PRO(weights)
+    pro_train = PRO()
 
-'''
-    #def perceptron(self, theta, s1, s2):
-do a perceptron update of the parameters theta:
-   if theta * s1.features <= theta * s2.features:
-       mistakes += 1
-       theta += eta * (s1.features - s2.features) # this is vector addition!
-'''
+    #check the output before training
+    pro_train.rank_and_bleu()
+    #learn the better weights
+    learnt_weights = pro_train.learn_weights()
+    pro_train.rank_and_bleu(weights=learnt_weights)
 
+    #test the new weights on the test sets
+    pro_test = PRO(train_location='dev+test/', weights=learnt_weights)
+    pro_test.rank_and_bleu(weights=learnt_weights)
 
 
 

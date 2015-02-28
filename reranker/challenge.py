@@ -7,6 +7,7 @@ import sys
 from namedlist import namedlist
 import pdb
 from math import fabs
+from random import randint
 
 
 ##############################
@@ -23,13 +24,16 @@ class PRO(object):
                   sample_number=100,
                   eta=0.1,
                   epochs=5,
-                  weights=None ):
+                  weights=None, write_bleu=False ):
         
         self.train_location = train_location
         
         self.tps = tps
-        self.num_train = 800
-        self.num_test = 800
+        if train_location == 'train/':
+            self.num_train = 400
+        else:
+            self.num_train = 800
+            
 
         #percentron training variables
         self.tau = tau
@@ -52,7 +56,7 @@ class PRO(object):
         #Build data array, that contains the translations per reference, with their scores and features
         self.data = self.build_data()
         self.build_features(self.num_train, norm=False)
-        self.collect_bleu_scores(write=False)   
+        self.collect_bleu_scores(write_bleu)   
 
 
     #TODO: What order do the weights appear in?
@@ -111,7 +115,7 @@ class PRO(object):
         features = {}
         for k,v in feature_locations.iteritems():
             feature = self.build_ordered_list(v)
-            #TODO: figure this out for the train/ case
+
             assert len(feature) == num_data * self.tps
             feature = self.structure(feature)
             features[k[:-4]] = feature
@@ -120,7 +124,7 @@ class PRO(object):
             for j, t in enumerate(self.translations[i]):
                 feat_vec = {}
                 for f in self.feats:
-                    curr_feat = features[f][i][j]
+                    curr_feat = float(features[f][i][j])
                     feat_vec[f] = curr_feat
                 self.data[ref][t].features = feat_vec
 
@@ -164,19 +168,27 @@ class PRO(object):
         Get tau translation pairs (s1,s2) from the translations indexed by the reference translation.
         A pair (s1,s2) is in the output if BLEU(s1) - BLEU(s2) > alpha
         '''
+
+        sys.stderr.write('Taking samples\n')
         sample = []
         best_candidates = self.data[ref] # get the dictionary of relevant translations
+
         for i in range(self.tau):
             # pick two translations from the dictionary at random
-            t1, t2 = rnd.sample(best_candidates.keys(),2)
+            a = randint(0, len(best_candidates.keys())-1 )   #subtract one because range is inclusive
+            b = randint(0, len(best_candidates.keys())-1 )
+            t1 = best_candidates.keys()[a]
+            t2 = best_candidates.keys()[b]
+
             diff = individual_bleu(ref, t1, self.pseudocount) - individual_bleu(ref, t2, self.pseudocount)
             if (diff > self.alpha):
-                sample.append(t1, t2, diff)
+                sample.append((t1, t2, diff))
             elif (diff < -self.alpha):
-                sample.append(t2, t1, diff)
+                sample.append((t2, t1, diff))
             else:
                 continue
         sample.sort(key=lambda a: math.fabs(a[2])) #in ascending order
+        sys.stderr.write('Samples done\n')
         return sample[-self.sample_number:] 
 
 
@@ -191,7 +203,9 @@ class PRO(object):
 
     def learn_weights(self):
         for i in range(self.epochs):
-            for ref in self.references:
+            sys.stderr.write('EPOCH '+str(i)+'\n')
+            for r, ref in enumerate(self.references):
+                sys.stderr.write('EPOCH '+str(i)+ ' Ref: '+str(r)+'\n')
                 samples = self.get_samples(ref)
                 self.perceptron_update(samples, ref)
 	    return self.weights
@@ -200,21 +214,27 @@ class PRO(object):
     def perceptron_update(self, samples, ref):
         #do learning
         #update self.weights
-        for samp in samples:
+        for s, samp in enumerate(samples):
+            
+            sys.stderr.write('Percentron update '+str(s)+'\n')
             s1 = samp[0]
             s2 = samp[1]
             for i, f in enumerate(self.feats):
                 s1_feats = self.data[ref][s1].features
                 s2_feats = self.data[ref][s2].features
-                
-                if w * s1_feat[f] <= w * s2_feat[f]:
+                #pdb.set_trace()
+                if self.weights[f] * s1_feats[f] <= self.weights[f] * s2_feats[f]:
                     gradient = 0
                     for feat in self.feats:                
-                        gradient += self.eta * (s1_feat[feat] - s2_feat[feat]) # this is vector addition!
+                        gradient += self.eta * (s1_feats[feat] - s2_feats[feat]) # this is vector addition!
                     self.weights[f] = gradient
 
-    def rank_and_bleu(self, out='pro_best_trans.out'):
+    def rank_and_bleu(self, out='pro_best_trans.out', learnt_weights=None):
         outfile = open(out,'w')
+        
+        if learnt_weights is not None: self.weights = learnt_weights 
+        #assert len(learnt_weights.keys()) == len(self.feats)
+        #TODO: make sure you only update the weights if the size is correct
 
         for r, ref in enumerate(self.references):
             best, best_t = (-1e300, '')
@@ -232,19 +252,34 @@ class PRO(object):
         return out , b
 
 if __name__ == "__main__":
-    #weights = (('lex',1.), ('lm', 1.), ('tm', 1.))
-    #pro_train = PRO(weights)
     pro_train = PRO()
-
-    #check the output before training
-    pro_train.rank_and_bleu()
+    sys.stderr.write('Train Pro has been initialized\n')
+    #TODO: need to see what's working... you can always run the tests in test_challenge.py
+    #TODO: see why you're getting BLEU=0 for the 'train' set. Are the refs being picked up correctly? Probably not    
+    
+    #### TRAIN ####
+    #rank and score with basic weights
+    out_train, bleu_1_train = pro_train.rank_and_bleu()
+    sys.stderr.write('Train 1 BLEU:' + str(bleu_1_train) + '\n')
     #learn the better weights
     learnt_weights = pro_train.learn_weights()
-    pro_train.rank_and_bleu(weights=learnt_weights)
+    sys.stderr.write('Weights learnt with perceptron\n')
+    #rank and score with learnt weights
+    out_train, bleu_2_train = pro_train.rank_and_bleu(weights=learnt_weights)
+    sys.stderr.write('Train 2 BLEU:'+bleu_2_train+'\n')
 
+    #assert bleu_2_train > bleu_1_train
+
+    #### TEST ####
     #test the new weights on the test sets
-    pro_test = PRO(train_location='dev+test/', weights=learnt_weights)
-    pro_test.rank_and_bleu(weights=learnt_weights)
+    pro_test = PRO(train_location='dev+test/')
+    sys.stderr.write('Test Pro has been initialized\n')
+
+    out, bleu_1_test = pro_test.rank_and_bleu()
+    sys.stderr.write('Train 1 BLEU:'+bleu_1_test+'\n')
+
+    out, bleu_2_test = pro_test.rank_and_bleu(weights=learnt_weights)
+    sys.stderr.write('Test 2 BLEU:'+bleu_2_test+'\n')
 
 
 

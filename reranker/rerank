@@ -26,7 +26,6 @@ for feat in all_feats:
   sys.stderr.write(' %s=%g' % (feat, weights[feat]))
 sys.stderr.write('\n')
 
-del_test = open('diff_me_please_default.out', 'w')    
 num_sents = len(all_hyps) / 100
 for s in xrange(0, num_sents):
   hyps_for_one_sent = all_hyps[s * 100:s * 100 + 100]
@@ -38,9 +37,6 @@ for s in xrange(0, num_sents):
       (k, v) = feat.split('=')
       score += weights[k] * float(v)
       feature_vector.append(str(float(v)))
-    del_test.write(hyp)
-    del_test.write(str(score)+'\n')
-    del_test.write(str(feature_vector)+'\n')
     
     if score > best_score:
       (best_score, best) = (score, hyp)

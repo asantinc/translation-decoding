@@ -4,14 +4,25 @@ from math import fabs
 import os
 
 
-def test1():
+def assert_helper(assert_value, train_location, file_to_score):
+    ref_location = train_location+'ref.out'
+    try:
+        b = compute_bleu(file_to_score, ref=ref_location)
+        assert (fabs(b - assert_value) < 1e-9)
+        sys.stderr.write('PASSED test 1: '+str(b)+' using '+train_location+' \n')        
+    except (AssertionError):
+        sys.stderr.write('FAILED test 1 : '+str(b)+' using '+train_location+' \n')
+        os.remove(file_to_score)
+
+
+def test1(train_location='dev+test/'):
     '''
     Test that the PRO class outputs the same value as the default 27.3509457562
     # TODO: we could add a couple more number tests
     '''
-    pro = PRO(train_location='dev+test/')
-    temp_file = 'temp.out'  #will be removed
-    outfile = open(temp_file,'w')
+    pro = PRO(train_location)
+    file_to_score = 'temp.out'  #will be removed
+    outfile = open(file_to_score,'w')
 
     for r, ref in enumerate(pro.references):
         best, best_t = (-1e300, '')
@@ -23,30 +34,33 @@ def test1():
                 (best, best_t) = (curr_score, t)
         
         outfile.write(best_t+'\n')
-
     outfile.close() #if you don't close it and try to read from it again... it only reads 398 lines ;)
-    try:
-        b = compute_bleu(temp_file)
-        assert (fabs(b - 27.3509457562) < 1e-9)
-        sys.stderr.write('PASSED: Test 1 \n')        
-    except (AssertionError):
-        sys.stderr.write('FAILED: Test 1 \n')
-    os.remove(temp_file)
 
+    assert_value = 27.3509457562 if train_location == 'dev+test/' else 25.760115946 #expected values found using Adam Lopez's 'rerank' code
+    assert_helper(assert_value, train_location, file_to_score)
+    
 
-
-def test2():
+def test2(train_location='dev+test/'):
     '''
     Test Pro's ranking and BLEU scoring method
     '''
-    pro = PRO(train_location='dev+test/')
+    pro = PRO(train_location)
     out, b = pro.rank_and_bleu()
     os.remove(out)
+
+    assert_value = 27.3509457562 if train_location == 'dev+test/' else 25.760115946 #expected values found using Adam Lopez's 'rerank' code
     try:
-        assert (fabs(b - 27.3509457562) < 1e-9)
-        sys.stderr.write('PASSED: Test 2 \n')        
+        assert (fabs(b - assert_value) < 1e-9)
+        sys.stderr.write('PASSED Test 2: '+str(b)+' using '+train_location+' \n')        
     except (AssertionError):
-        sys.stderr.write('FAILED: Test 2 \n')
+        sys.stderr.write('FAILED Test 2: '+str(b)+' using '+train_location+' \n')
+
+
 
 test1()
 test2()
+
+test1(train_location='train/')
+test2(train_location='train/')
+
+

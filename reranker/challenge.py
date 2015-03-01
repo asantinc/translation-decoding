@@ -43,9 +43,6 @@ class PRO(object):
         self.epochs = epochs
         self.pseudocount = 0.0
 
-        #TODO: do I need this references = None??
-        self.references = None
-
         if weights is None: weights = { 'lm':1. , 'tm':1., 'lex': 1.}  
         self.weights = weights
         self.feats = self.weights.keys()
@@ -201,10 +198,19 @@ class PRO(object):
             score += self.weights[f] * float(translation_vector[f])
         return score, translation_vector
 
-    def learn_weights(self):
+	
+    def learn_weights(self, tau=None, epoch=None):
+        '''
+        Learn new weights by:
+        1. taking samples for each group of translated sentences and scoring them
+        2. Updating their weights 
+        '''
+        if tau is not None: self.tau = tau
+        if epoch is not None: self.epoch = epoch
+
         for i in range(self.epochs):
             sys.stderr.write('EPOCH '+str(i)+'\n')
-            for r, ref in enumerate(self.references):
+            for r, ref in enumerate(self.references): 
                 sys.stderr.write('EPOCH '+str(i)+ ' Ref: '+str(r)+'\n')
                 samples = self.get_samples(ref)
                 self.perceptron_update(samples, ref)
@@ -234,7 +240,6 @@ class PRO(object):
         
         if learnt_weights is not None: self.weights = learnt_weights 
         #assert len(learnt_weights.keys()) == len(self.feats)
-        #TODO: make sure you only update the weights if the size is correct
 
         for r, ref in enumerate(self.references):
             best, best_t = (-1e300, '')
@@ -248,22 +253,22 @@ class PRO(object):
             outfile.write(best_t+'\n')
 
         outfile.close()
-        b = compute_bleu(out)
+        b = compute_bleu(out, ref=self.train_location+'ref.out')
         return out , b
 
 if __name__ == "__main__":
     pro_train = PRO()
     sys.stderr.write('Train Pro has been initialized\n')
-    #TODO: need to see what's working... you can always run the tests in test_challenge.py
-    #TODO: see why you're getting BLEU=0 for the 'train' set. Are the refs being picked up correctly? Probably not    
     
     #### TRAIN ####
     #rank and score with basic weights
     out_train, bleu_1_train = pro_train.rank_and_bleu()
     sys.stderr.write('Train 1 BLEU:' + str(bleu_1_train) + '\n')
+
     #learn the better weights
-    learnt_weights = pro_train.learn_weights()
+    learnt_weights = pro_train.learn_weights(tau=200, epoch=2)
     sys.stderr.write('Weights learnt with perceptron\n')
+
     #rank and score with learnt weights
     out_train, bleu_2_train = pro_train.rank_and_bleu(weights=learnt_weights)
     sys.stderr.write('Train 2 BLEU:'+bleu_2_train+'\n')

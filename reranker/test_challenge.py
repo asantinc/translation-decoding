@@ -15,12 +15,12 @@ def assert_helper(assert_value, train_location, file_to_score):
         os.remove(file_to_score)
 
 
-def test1(train_location='dev+test/'):
+def test1(train_location='dev+test/', write_bleu=False):
     '''
     Test that the PRO class outputs the same value as the default 27.3509457562
     # TODO: we could add a couple more number tests
     '''
-    pro = PRO(train_location)
+    pro = PRO(train_location, write_bleu=write_bleu)
     file_to_score = 'temp.out'  #will be removed
     outfile = open(file_to_score,'w')
 
@@ -40,11 +40,11 @@ def test1(train_location='dev+test/'):
     assert_helper(assert_value, train_location, file_to_score)
     
 
-def test2(train_location='dev+test/'):
+def test2(train_location='dev+test/', write_bleu=False):
     '''
     Test Pro's ranking and BLEU scoring method
     '''
-    pro = PRO(train_location)
+    pro = PRO(train_location=train_location, write_bleu=write_bleu)
     out, b = pro.rank_and_bleu()
     os.remove(out)
 
@@ -57,10 +57,11 @@ def test2(train_location='dev+test/'):
 
 
 
-test1()
-test2()
 
-test1(train_location='train/')
+test1(write_bleu=True)                          #rewrites new bleu scores for dev+test/
+test2()                                         # will reuse the bleu scores written to file by test1
+
+test1(train_location='train/', write_bleu=True) #rewrites new bleu scores for train/
 test2(train_location='train/')
 
 

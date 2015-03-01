@@ -21,7 +21,7 @@ class PRO(object):
                   tps=100,
                   tau=5000,
                   alpha=0.1,
-                  sample_number=100,
+                  xi=1000,
                   eta=0.1,
                   epochs=5,
                   weights=None, write_bleu=False ):
@@ -35,10 +35,10 @@ class PRO(object):
             self.num_train = 800
             
 
-        #percentron training variables
+        #perceptron training variables
         self.tau = tau
         self.alpha = alpha
-        self.sample_number = sample_number
+        self.xi = xi
         self.eta = eta
         self.epochs = epochs
         self.pseudocount = 0.0
@@ -63,17 +63,6 @@ class PRO(object):
         '''
         assert len(weight_vector) == len(self.weights)
         self.weights = weight_vector
-
-
-    def build_ordered_list(self, filename):    
-        '''
-        Opens a file, produces a list with lines, and closes the file. This helps ensure that files close.
-        '''
-        f = open(filename,'r')
-        ordered = [line.rstrip('\n') for line in f]
-        f.close()
-        return ordered
-        
 
 
     def build_data(self, ):
@@ -112,7 +101,6 @@ class PRO(object):
         features = {}
         for k,v in feature_locations.iteritems():
             feature = self.build_ordered_list(v)
-
             assert len(feature) == num_data * self.tps
             feature = self.structure(feature)
             features[k[:-4]] = feature
@@ -125,6 +113,17 @@ class PRO(object):
                     feat_vec[f] = curr_feat
                 self.data[ref][t].features = feat_vec
 
+
+    def build_ordered_list(self, filename):    
+        '''
+        Opens a file, produces a list with lines, and closes the file. This helps ensure that files close.
+        '''
+        f = open(filename,'r')
+        ordered = [line.rstrip('\n') for line in f]
+        f.close()
+        return ordered
+        
+
     def structure(self, dataset):
         '''
         Convert the unstructured datasets which aren't grouped by Russian sentence to a structured list, indexed by Russian sentence.
@@ -134,7 +133,7 @@ class PRO(object):
         return structured
 
 
-    def collect_bleu_scores(self,write=False):
+    def collect_bleu_scores(self,write=True):
         '''
         Compute smoothed BLEU scores for each translation in the list of translations
         @translations_list a structured list of lists of translations, one list for each Russian sentence
@@ -144,51 +143,20 @@ class PRO(object):
             outfile = open(self.train_location+'bleu_scores','w')
             for ref in self.references:
                 translations = self.data[ref]
-                bleu_score_list = []
                 for t in translations:
                     bleu_score = individual_bleu(t, ref)
                     translations[t].bleu = bleu_score
-                    bleu_score_list.append(bleu_score)
-                outfile.write(str(bleu_score_list)+'\n')
+                    outfile.write(str(bleu_score)+'\n')
             outfile.close()
         else:
-            bleu_scores_list = self.build_ordered_list(self.train_location+'bleu_scores')
+            bleu_scores_unstruct = self.build_ordered_list(self.train_location+'bleu_scores')
+            bleu_scores_list = self.structure(bleu_scores_unstruct)
             for i, ref in enumerate(self.references):
-                translations = self.data[ref]
-                for j, t in enumerate(translations):
+                for j, t in enumerate(self.data[ref]):
                     bleu_score = bleu_scores_list[i][j]
-                    translations[t].bleu = bleu_score
+                    self.data[ref][t].bleu = float(bleu_score)
         
           
-    def get_samples(self, ref):
-        '''
-        Get tau translation pairs (s1,s2) from the translations indexed by the reference translation.
-        A pair (s1,s2) is in the output if BLEU(s1) - BLEU(s2) > alpha
-        '''
-
-        sys.stderr.write('Taking samples\n')
-        sample = []
-        best_candidates = self.data[ref] # get the dictionary of relevant translations
-
-        for i in range(self.tau):
-            # pick two translations from the dictionary at random
-            a = randint(0, len(best_candidates.keys())-1 )   #subtract one because range is inclusive
-            b = randint(0, len(best_candidates.keys())-1 )
-            t1 = best_candidates.keys()[a]
-            t2 = best_candidates.keys()[b]
-
-            diff = individual_bleu(ref, t1, self.pseudocount) - individual_bleu(ref, t2, self.pseudocount)
-            if (diff > self.alpha):
-                sample.append((t1, t2, diff))
-            elif (diff < -self.alpha):
-                sample.append((t2, t1, diff))
-            else:
-                continue
-        sample.sort(key=lambda a: math.fabs(a[2])) #in ascending order
-        sys.stderr.write('Samples done\n')
-        return sample[-self.sample_number:] 
-
-
     def score(self,translation_vector):
         '''
         Given a translation, return its score according to the linear model with the current weights
@@ -199,46 +167,104 @@ class PRO(object):
         return score, translation_vector
 
 	
-    def learn_weights(self, tau=None, epoch=None):
+    def learn_weights(self, tau=None, epoch=None, pseudocounts=1.):
         '''
         Learn new weights by:
-        1. taking samples for each group of translated sentences and scoring them
-        2. Updating their weights 
+        1. Taking samples of pairs of translations for each group of translated sentences
+        2. Updating the feature weights based on who wins in terms of BLEU scores vs. which of their individual features*weights beat each other
         '''
         if tau is not None: self.tau = tau
-        if epoch is not None: self.epoch = epoch
+        if epoch is not None: self.epochs = epoch
+        self.pseudocount = pseudocounts
 
         for i in range(self.epochs):
-            sys.stderr.write('EPOCH '+str(i)+'\n')
+            self.mistakes = 0
+            sys.stderr.write('--------- Epoch '+str(i)+'--------- \n')
             for r, ref in enumerate(self.references): 
-                sys.stderr.write('EPOCH '+str(i)+ ' Ref: '+str(r)+'\n')
+                #sys.stderr.write('EPOCH '+str(i)+ ' Ref: '+str(r)+'/'+str(len(self.references))+'\n')
                 samples = self.get_samples(ref)
                 self.perceptron_update(samples, ref)
-	    return self.weights
+            # Sanity checking: do the mistakes go down? Does BLEU go up?
+            sys.stderr.write('Mistakes: '+str(self.mistakes)+'\n')  
+            out, b = self.rank_and_bleu()  
+            sys.stderr.write('BLEU score: '+str(b)+'\n')  
+        return self.weights
+
+
+    def get_samples(self, ref):
+        '''
+        Get tau translation pairs (s1,s2) from the translations indexed by the reference translation.
+        A pair (s1,s2) is in the output if BLEU(s1) - BLEU(s2) > alpha
+        '''
+
+        #sys.stderr.write('Taking samples\n')
+        sample = []
+
+        for i in range(self.tau):
+            # pick two translations from the dictionary at random
+            a = randint(0, self.tps-1 )   #subtract one because range is inclusive
+            b = randint(0, self.tps-1 )
+            translations = self.data[ref].keys()
+            t1 = translations[a]
+            t2 = translations[b]
+
+            diff = self.data[ref][t1].bleu - self.data[ref][t2].bleu
+            if (diff > self.alpha):
+                sample.append((t1, t2, diff))
+            elif (diff < -self.alpha):
+                sample.append(( t2, t1, fabs(diff) ))
+            else:
+                continue
+        sample.sort(key=lambda a: math.fabs(a[2])) #in ascending order
+        #sys.stderr.write('Samples done\n')
+        return sample[-self.xi:] 
 
     
-    def perceptron_update(self, samples, ref):
-        #do learning
-        #update self.weights
-        for s, samp in enumerate(samples):
-            
-            sys.stderr.write('Percentron update '+str(s)+'\n')
+    def perceptron_update(self, xi_samples, ref):
+        '''
+        Play sentences against each other for each of their features
+        '''
+        #TODO: I think the logic for when to update a weight may incorrect
+
+        for s, samp in enumerate(xi_samples):
             s1 = samp[0]
             s2 = samp[1]
-            for i, f in enumerate(self.feats):
-                s1_feats = self.data[ref][s1].features
-                s2_feats = self.data[ref][s2].features
-                #pdb.set_trace()
-                if self.weights[f] * s1_feats[f] <= self.weights[f] * s2_feats[f]:
-                    gradient = 0
-                    for feat in self.feats:                
-                        gradient += self.eta * (s1_feats[feat] - s2_feats[feat]) # this is vector addition!
-                    self.weights[f] = gradient
 
-    def rank_and_bleu(self, out='pro_best_trans.out', learnt_weights=None):
+            #for i, f in enumerate(self.feats):  #for each feature pair of the samples
+            s1_feats = self.data[ref][s1].features
+            s2_feats = self.data[ref][s2].features
+            assert self.data[ref][s1].bleu > self.data[ref][s2].bleu    #s1 should always have the better BLEU score
+
+            #calculate their scores based on their features (w*features)
+            s1_feats_score = self.dot_product(s1_feats)
+            s2_feats_score = self.dot_product(s2_feats)
+            
+            if s1_feats_score <= s2_feats_score:        #if s1 ranks lower even if my BLEU score is higher, update the weights!
+                self.mistakes += 1
+                for feat in self.feats:   
+                    #pdb.set_trace()             
+                    self.weights[feat] += self.eta * (s1_feats[feat] - s2_feats[feat]) 
+                    #sys.stderr.write(str(self.weights)+'\n') 
+                
+    
+    def dot_product(self, feat_vec):    
+        '''
+        Return dot product between the weights vector and a given feature vector
+        '''    
+        dot_prod = 0
+        for feat, weight in self.weights.iteritems():
+            dot_prod += weight*feat_vec[feat]
+        return dot_prod
+
+
+    def rank_and_bleu(self, out='pro_best_trans.out', weights=None):
+        '''
+        Rank translations for every reference and output the top translation to file. 
+        Score the chosen translations using BLEU and return the BLEU score
+        '''
         outfile = open(out,'w')
         
-        if learnt_weights is not None: self.weights = learnt_weights 
+        if weights is not None: self.weights = weights 
         #assert len(learnt_weights.keys()) == len(self.feats)
 
         for r, ref in enumerate(self.references):
@@ -257,34 +283,37 @@ class PRO(object):
         return out , b
 
 if __name__ == "__main__":
-    pro_train = PRO()
-    sys.stderr.write('Train Pro has been initialized\n')
-    
+
     #### TRAIN ####
-    #rank and score with basic weights
-    out_train, bleu_1_train = pro_train.rank_and_bleu()
-    sys.stderr.write('Train 1 BLEU:' + str(bleu_1_train) + '\n')
+    original_weights = {'lm':10., 'lex':10., 'tm':10., 'diag':10., 'ibm':10.}
+    pro_train = PRO(weights={'lm':10., 'lex':10., 'tm':10., 'diag':10., 'ibm':10.})
+    sys.stderr.write('\n ******Train Pro has been initialized****** \n')
+    sys.stderr.write('Weights original : '+str(original_weights)+'\n')
+    
+    #rank and score with original weights
+    out_train, bleu_original_train = pro_train.rank_and_bleu(weights={'lm':10., 'lex':10., 'tm':10., 'diag':10., 'ibm':10.})
+    sys.stderr.write('Train Original BLEU:' + str(bleu_original_train) + '\n')
 
     #learn the better weights
-    learnt_weights = pro_train.learn_weights(tau=200, epoch=2)
-    sys.stderr.write('Weights learnt with perceptron\n')
+    learnt_weights = pro_train.learn_weights()
+    sys.stderr.write('Weights learnt   : '+str(learnt_weights)+'\n')
 
-    #rank and score with learnt weights
-    out_train, bleu_2_train = pro_train.rank_and_bleu(weights=learnt_weights)
-    sys.stderr.write('Train 2 BLEU:'+bleu_2_train+'\n')
-
+    #rank and score with learnt weights with the training
+    out_train, bleu_learnt_train = pro_train.rank_and_bleu(weights=learnt_weights)
+    sys.stderr.write('Train Original BLEU :' + str(bleu_original_train) + '\n')
+    sys.stderr.write('Train Learnt BLEU   :'+str(bleu_learnt_train)+'\n')
     #assert bleu_2_train > bleu_1_train
 
     #### TEST ####
     #test the new weights on the test sets
     pro_test = PRO(train_location='dev+test/')
-    sys.stderr.write('Test Pro has been initialized\n')
+    sys.stderr.write('\n *******Test Pro has been initialized*********\n')
 
-    out, bleu_1_test = pro_test.rank_and_bleu()
-    sys.stderr.write('Train 1 BLEU:'+bleu_1_test+'\n')
+    out, bleu_original_test = pro_test.rank_and_bleu(weights=original_weights)
+    sys.stderr.write('Test Original BLEU:'+str(bleu_original_test)+'\n')
 
-    out, bleu_2_test = pro_test.rank_and_bleu(weights=learnt_weights)
-    sys.stderr.write('Test 2 BLEU:'+bleu_2_test+'\n')
+    out, bleu_learnt_test = pro_test.rank_and_bleu(weights=learnt_weights)
+    sys.stderr.write('Test Learnt BLEU:'+str(bleu_learnt_test)+'\n')
 
 
 

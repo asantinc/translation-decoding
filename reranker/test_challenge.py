@@ -15,6 +15,7 @@ def assert_helper(assert_value, train_location, file_to_score):
         os.remove(file_to_score)
 
 
+
 def test1(train_location='dev+test/', write_bleu=False):
     '''
     Test that the PRO class outputs the same value as the default 27.3509457562
@@ -54,8 +55,6 @@ def test2(train_location='dev+test/', write_bleu=False):
         sys.stderr.write('PASSED Test 2: '+str(b)+' using '+train_location+' \n')        
     except (AssertionError):
         sys.stderr.write('FAILED Test 2: '+str(b)+' using '+train_location+' \n')
-
-
 
 
 test1(write_bleu=True)                          #rewrites new bleu scores for dev+test/

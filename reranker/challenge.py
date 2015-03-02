@@ -21,10 +21,10 @@ class PRO(object):
                   tps=100,
                   tau=5000,
                   alpha=0.1,
-                  xi=1000,
+                  xi=100,
                   eta=0.1,
-                  epochs=5,
-                  weights=None, write_bleu=False ):
+                  epochs=20,
+                  weights=None, write_bleu=False, norm=True):
         
         self.train_location = train_location
         
@@ -52,7 +52,7 @@ class PRO(object):
         
         #Build data array, that contains the translations per reference, with their scores and features
         self.data = self.build_data()
-        self.build_features(self.num_train, norm=False)
+        self.build_features(self.num_train, norm=norm)
         self.collect_bleu_scores(write_bleu)   
 
 
@@ -101,6 +101,7 @@ class PRO(object):
         features = {}
         for k,v in feature_locations.iteritems():
             feature = self.build_ordered_list(v)
+            print num_data * self.tps
             assert len(feature) == num_data * self.tps
             feature = self.structure(feature)
             features[k[:-4]] = feature
@@ -167,16 +168,12 @@ class PRO(object):
         return score, translation_vector
 
 	
-    def learn_weights(self, tau=None, epoch=None, pseudocounts=1.):
+    def learn_weights(self):
         '''
         Learn new weights by:
         1. Taking samples of pairs of translations for each group of translated sentences
         2. Updating the feature weights based on who wins in terms of BLEU scores vs. which of their individual features*weights beat each other
         '''
-        if tau is not None: self.tau = tau
-        if epoch is not None: self.epochs = epoch
-        self.pseudocount = pseudocounts
-
         for i in range(self.epochs):
             self.mistakes = 0
             sys.stderr.write('--------- Epoch '+str(i)+'--------- \n')
@@ -188,6 +185,7 @@ class PRO(object):
             sys.stderr.write('Mistakes: '+str(self.mistakes)+'\n')  
             out, b = self.rank_and_bleu()  
             sys.stderr.write('BLEU score: '+str(b)+'\n')  
+            sys.stderr.write(str(self.weights)+'\n')  
         return self.weights
 
 
@@ -224,8 +222,6 @@ class PRO(object):
         '''
         Play sentences against each other for each of their features
         '''
-        #TODO: I think the logic for when to update a weight may incorrect
-
         for s, samp in enumerate(xi_samples):
             s1 = samp[0]
             s2 = samp[1]
@@ -241,11 +237,11 @@ class PRO(object):
             
             if s1_feats_score <= s2_feats_score:        #if s1 ranks lower even if my BLEU score is higher, update the weights!
                 self.mistakes += 1
-                for feat in self.feats:   
-                    #pdb.set_trace()             
+                for feat in self.feats:         
+                    #sys.stderr.write(str(self.weights)+'\n') 
                     self.weights[feat] += self.eta * (s1_feats[feat] - s2_feats[feat]) 
                     #sys.stderr.write(str(self.weights)+'\n') 
-                
+        #pdb.set_trace()             
     
     def dot_product(self, feat_vec):    
         '''
@@ -285,13 +281,15 @@ class PRO(object):
 if __name__ == "__main__":
 
     #### TRAIN ####
-    original_weights = {'lm':10., 'lex':10., 'tm':10., 'diag':10., 'ibm':10.}
-    pro_train = PRO(weights={'lm':10., 'lex':10., 'tm':10., 'diag':10., 'ibm':10.})
+    #original_weights = {'lm':10., 'lex':10., 'tm':10., 'diag':10., 'ibm':10.}
+    original_weights = {'lm':0., 'lex':0., 'tm':0., 'bias':0., 'ibm':0., 'diag':0}
+    temp_weights = original_weights.copy()
+    pro_train = PRO(weights= original_weights, norm=True)
     sys.stderr.write('\n ******Train Pro has been initialized****** \n')
     sys.stderr.write('Weights original : '+str(original_weights)+'\n')
     
     #rank and score with original weights
-    out_train, bleu_original_train = pro_train.rank_and_bleu(weights={'lm':10., 'lex':10., 'tm':10., 'diag':10., 'ibm':10.})
+    out_train, bleu_original_train = pro_train.rank_and_bleu(weights=original_weights)
     sys.stderr.write('Train Original BLEU:' + str(bleu_original_train) + '\n')
 
     #learn the better weights
@@ -309,7 +307,7 @@ if __name__ == "__main__":
     pro_test = PRO(train_location='dev+test/')
     sys.stderr.write('\n *******Test Pro has been initialized*********\n')
 
-    out, bleu_original_test = pro_test.rank_and_bleu(weights=original_weights)
+    out, bleu_original_test = pro_test.rank_and_bleu(weights=temp_weights)
     sys.stderr.write('Test Original BLEU:'+str(bleu_original_test)+'\n')
 
     out, bleu_learnt_test = pro_test.rank_and_bleu(weights=learnt_weights)

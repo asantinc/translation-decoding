@@ -17,38 +17,7 @@ def print_scores(q, lm, tm, lex, score, result_file, length=0):
 ################################
 #	            Q1
 ################################
-def q1(sentences, feat_unnorm, feat_norm):   
-    weights = {'lex':1, 'lm': 1, 'tm': 0}
-    scores_unnorm = {}
-    scores_norm = {}
-
-    for feat in weights.keys():
-        f_unnorm_feat = open(feat_unnorm+feat+'.out', 'r')
-        f_norm_feat = open(feat_norm+feat+'.out', 'r')
-        scores_unnorm[feat] = f_unnorm_feat.read().splitlines()   
-        scores_norm[feat] = f_norm_feat.read().splitlines()  
-        f_unnorm_feat.close()
-        f_norm_feat.close()
-               
-    rank_unnorm = 'output/q1/fliplm_unnorm.out'
-    rank_norm = 'output/q1/fliplm_norm.out'
-
-    rerank(sentences, scores_unnorm, weights, rank_unnorm)
-    rerank(sentences, scores_norm, weights, rank_norm)
-    score_unnorm = compute_bleu(rank_unnorm)
-    score_norm = compute_bleu(rank_norm)
-    print score_unnorm
-    print score_norm
-
-    result_unnorm = open('output/q1/result_unnorm', 'w')
-    result_norm = open('output/q1/result_norm', 'w')
-    print_scores('Q1 unnorm:', weights['lm'], weights['tm'], weights['lex'], score_unnorm, result_unnorm)
-    print_scores('Q1 norm:  ', weights['lm'], weights['tm'], weights['lex'], score_norm, result_norm)
-    result_unnorm.close()
-    result_norm.close()
-
-
-def q1_old():
+def q1():
     result_file = open('output/q1/result', 'w')
     lex = 1
     tm = 0
@@ -161,8 +130,7 @@ sentences = open('dev+test/100best_clean.out', 'r').read().splitlines()
 feat_unnorm = 'dev+test/unnorm/'
 feat_norm = 'dev+test/norm/'
 
-q1(sentences, feat_unnorm, feat_norm)
-q1_old()
+q1()
 q2()
 q4()
 q5()

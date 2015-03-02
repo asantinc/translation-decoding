@@ -1,0 +1,74 @@
+tau=5000
+xi=1000,
+
+******Train Pro has been initialized****** 
+Weights original : {'lex': 1.0, 'tm': 1.0, 'lm': 1.0}
+Train Original BLEU:25.760115946
+--------- Epoch 0--------- 
+Mistakes: 82031
+BLEU score: 26.2341939528
+--------- Epoch 1--------- 
+Mistakes: 82516
+BLEU score: 25.6681004781
+--------- Epoch 2--------- 
+Mistakes: 82225
+BLEU score: 25.8750771129
+--------- Epoch 3--------- 
+Mistakes: 82431
+BLEU score: 25.687082263
+--------- Epoch 4--------- 
+Mistakes: 82388
+BLEU score: 25.8660990247
+--------- Epoch 5--------- 
+Mistakes: 82152
+BLEU score: 26.0760825075
+--------- Epoch 6--------- 
+Mistakes: 81612
+BLEU score: 25.9311317156
+--------- Epoch 7--------- 
+Mistakes: 82645
+BLEU score: 26.0495218106
+--------- Epoch 8--------- 
+Mistakes: 82408
+BLEU score: 25.805264408
+--------- Epoch 9--------- 
+Mistakes: 82297
+BLEU score: 25.5957614528
+--------- Epoch 10--------- 
+Mistakes: 82070
+BLEU score: 26.1005386122
+--------- Epoch 11--------- 
+Mistakes: 81925
+BLEU score: 25.7774346081
+--------- Epoch 12--------- 
+Mistakes: 82454
+BLEU score: 25.7892600314
+--------- Epoch 13--------- 
+Mistakes: 82549
+BLEU score: 25.8946126509
+--------- Epoch 14--------- 
+Mistakes: 82212
+BLEU score: 26.1721174736
+--------- Epoch 15--------- 
+Mistakes: 82514
+BLEU score: 25.899275691
+--------- Epoch 16--------- 
+Mistakes: 82285
+BLEU score: 25.6989283428
+--------- Epoch 17--------- 
+Mistakes: 82177
+BLEU score: 25.9066880886
+--------- Epoch 18--------- 
+Mistakes: 81975
+BLEU score: 25.8404224596
+--------- Epoch 19--------- 
+Mistakes: 82129
+BLEU score: 25.7660435783
+Weights learnt   : {'lex': 0.31406300000295745, 'tm': 0.14499399999965204, 'lm': -0.6593200000123755}
+Train Original BLEU :25.760115946
+Train Learnt BLEU   :25.7660435783
+
+ *******Test Pro has been initialized*********
+Test Original BLEU:27.3509457562
+Test Learnt BLEU:24.2976956631
+

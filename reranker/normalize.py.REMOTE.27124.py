@@ -63,8 +63,11 @@ def normalize(input_fname, output_fname, num_sents=100):
 feat_unnorm = 'dev+test/unnorm/'
 feat_norm = 'dev+test/norm/'
 
-
 for var in ['lex', 'lm', 'tm', 'ibm', 'diag']:
 	normalize(feat_unnorm+var+'.out', feat_norm+var+'.out')
+
+
+
+
 
     

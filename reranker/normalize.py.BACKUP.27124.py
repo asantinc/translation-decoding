@@ -62,9 +62,21 @@ def normalize(input_fname, output_fname, num_sents=100):
 
 feat_unnorm = 'dev+test/unnorm/'
 feat_norm = 'dev+test/norm/'
-
+<<<<<<< HEAD
+for var in ['lex', 'lm', 'tm']:
+    normalize(feat_unnorm+var+'.out', feat_norm+var+'.out')
+=======
 
 for var in ['lex', 'lm', 'tm', 'ibm', 'diag']:
 	normalize(feat_unnorm+var+'.out', feat_norm+var+'.out')
+>>>>>>> e4e359c29fa2aa8ccdae15051b8e9691b1dea8b2
+
+feat_unnorm = 'train/unnorm/'
+feat_norm = 'train/norm/'
+for var in ['lex', 'lm', 'tm', 'ibm', 'diag']:
+    normalize(feat_unnorm+var+'.out', feat_norm+var+'.out')
+
+
+
 
     

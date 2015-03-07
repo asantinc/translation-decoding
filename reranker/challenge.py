@@ -8,6 +8,7 @@ from namedlist import namedlist
 import pdb
 from math import fabs
 from random import randint
+import itertools
 
 
 ##############################
@@ -20,11 +21,11 @@ class PRO(object):
                   train_location='train/', 
                   tps=100,
                   tau=5000,
-                  alpha=0.1,
-                  xi=100,
-                  eta=0.1,
-                  epochs=20,
-                  weights=None, write_bleu=False, norm=True):
+                  alpha=1,
+                  xi=5000,
+                  eta=.01,
+                  epochs=200,
+                  weights=None, write_bleu=False, norm=False):
         
         self.train_location = train_location
         
@@ -41,7 +42,7 @@ class PRO(object):
         self.xi = xi
         self.eta = eta
         self.epochs = epochs
-        self.pseudocount = 0.0
+        self.pseudocount = 1.0
 
         if weights is None: weights = { 'lm':1. , 'tm':1., 'lex': 1.}  
         self.weights = weights
@@ -174,6 +175,7 @@ class PRO(object):
         1. Taking samples of pairs of translations for each group of translated sentences
         2. Updating the feature weights based on who wins in terms of BLEU scores vs. which of their individual features*weights beat each other
         '''
+        bleu_200 = open('bleu_200_converge_0.01.out', 'w')
         for i in range(self.epochs):
             self.mistakes = 0
             sys.stderr.write('--------- Epoch '+str(i)+'--------- \n')
@@ -186,10 +188,31 @@ class PRO(object):
             out, b = self.rank_and_bleu()  
             sys.stderr.write('BLEU score: '+str(b)+'\n')  
             sys.stderr.write(str(self.weights)+'\n')  
+            bleu_200.write(str(b)+'\n')
         return self.weights
 
 
     def get_samples(self, ref):
+        comb = itertools.combinations(range(self.tps), 2)
+        sample = []
+        translations = self.data[ref].keys()
+        for i, j in comb:
+            t1 = translations[i]
+            t2 = translations[j]
+
+            diff = self.data[ref][t1].bleu - self.data[ref][t2].bleu
+            if (diff > self.alpha):
+                sample.append((t1, t2, diff))
+            elif (diff < -self.alpha):
+                sample.append(( t2, t1, fabs(diff) ))
+            else:
+                continue
+        sample.sort(key=lambda a:  -math.fabs(a[2]))
+
+        return sample[-self.xi:] 
+
+    
+    def get_samples_original(self, ref):
         '''
         Get tau translation pairs (s1,s2) from the translations indexed by the reference translation.
         A pair (s1,s2) is in the output if BLEU(s1) - BLEU(s2) > alpha
@@ -213,8 +236,7 @@ class PRO(object):
                 sample.append(( t2, t1, fabs(diff) ))
             else:
                 continue
-        sample.sort(key=lambda a: math.fabs(a[2])) #in ascending order
-        #sys.stderr.write('Samples done\n')
+        sample.sort(key=lambda a: - math.fabs(a[2]))
         return sample[-self.xi:] 
 
     
@@ -235,11 +257,17 @@ class PRO(object):
             s1_feats_score = self.dot_product(s1_feats)
             s2_feats_score = self.dot_product(s2_feats)
             
+            #update weights
             if s1_feats_score <= s2_feats_score:        #if s1 ranks lower even if my BLEU score is higher, update the weights!
                 self.mistakes += 1
                 for feat in self.feats:         
                     #sys.stderr.write(str(self.weights)+'\n') 
                     self.weights[feat] += self.eta * (s1_feats[feat] - s2_feats[feat]) 
+                    #sys.stderr.write(str(self.weights)+'\n') 
+            #else:
+                #for feat in self.feats:         
+                    #sys.stderr.write(str(self.weights)+'\n') 
+                    #self.weights[feat] += self.eta * (s1_feats[feat] - s2_feats[feat]) 
                     #sys.stderr.write(str(self.weights)+'\n') 
         #pdb.set_trace()             
     
@@ -281,10 +309,10 @@ class PRO(object):
 if __name__ == "__main__":
 
     #### TRAIN ####
-    #original_weights = {'lm':10., 'lex':10., 'tm':10., 'diag':10., 'ibm':10.}
-    original_weights = {'lm':0., 'lex':0., 'tm':0., 'bias':0., 'ibm':0., 'diag':0}
+    original_weights = {'lm':0., 'lex':0., 'tm':0.}
+    #original_weights = {'lm':1., 'lex':1., 'tm':1., 'bias':0., 'ibm':0., 'diag':0}
     temp_weights = original_weights.copy()
-    pro_train = PRO(weights= original_weights, norm=True)
+    pro_train = PRO(weights= original_weights, norm=True, write_bleu=True)
     sys.stderr.write('\n ******Train Pro has been initialized****** \n')
     sys.stderr.write('Weights original : '+str(original_weights)+'\n')
     

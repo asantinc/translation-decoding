@@ -1,9 +1,12 @@
-output = open('dev+test/unnorm/bias.out', 'w')
-output2 = open('dev+test/norm/bias.out', 'w')
-for i in range(40000):
-    output.write('1 \n')
-    output2.write('1 \n')
+import normalize
+import pdb
 
+unnorm = open('train/unnorm/len.out', 'w')
+in_f = open('train/100best_clean.out', 'r')
 
-
-
+pdb.set_trace()
+for line in in_f:
+    print len(line)
+    unnorm.write(str(len(line.strip()))+'\n')
+    
+normalize.normalize('train/unnorm/len.out', 'train/norm/len.out')
